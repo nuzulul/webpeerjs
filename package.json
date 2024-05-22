@@ -4,9 +4,10 @@
   "description": "Simple peer-to-peer with IPFS",
   "main": "index.js",
   "directories": {
-    "test": "test"
+	"test": "test"
   },
   "scripts": {
+	"dev":"vite serve test",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

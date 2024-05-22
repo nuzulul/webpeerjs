@@ -7,8 +7,8 @@ import { createLibp2p } from 'libp2p'
 import { IDBBlockstore } from 'blockstore-idb'
 import { IDBDatastore } from 'datastore-idb'
 import { webTransport } from '@libp2p/webtransport'
-import { webSockets } from '@libp2p/websockets'
-import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+//import { webSockets } from '@libp2p/websockets'
+//import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import * as config from  './config'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -24,28 +24,62 @@ import { peerIdFromString } from '@libp2p/peer-id'
 class webpeerjs{
 	
 	libp2p
+	helia
 	
-	constructor(libp2p){
+	status
+	id
+	discoveredPeers
+	
+	constructor(helia){
 		
-		this.libp2p = libp2p
+		this.libp2p = helia.libp2p
+		
+		this.helia = helia
+		
+		this.status = (function(libp2p) {
+			return libp2p.status
+		})(this.libp2p);
+		
+		this.id = this.libp2p.peerId.toString()
+		
+		this.discoveredPeers = new Map()
+		
+		console.log('status',this.status)
 
-		libp2p.addEventListener("peer:connect", (evt) => {
+		this.libp2p.addEventListener("peer:connect", (evt) => {
 		  const connection = evt.detail;
-		  console.log(`Connected to ${connection.toString()}`);
+		  //console.log(`Connected to ${connection.toString()}`);
 		  
 		});
 
-		libp2p.addEventListener('peer:discovery', (peerId) => {
+		this.libp2p.addEventListener('peer:discovery', (evt) => {
 		  // No need to dial, autoDial is on
-			  console.log('Discovered:', peerId.toString())
+			  //console.log('Discovered:', peerId.toString())
+			  this.discoveredPeers.set(evt.detail.id.toString(), evt.detail)
 		  })
 
 		// Listen for peers disconnecting
-		libp2p.addEventListener("peer:disconnect", (evt) => {
+		this.libp2p.addEventListener("peer:disconnect", (evt) => {
 		  const connection = evt.detail;
-		  console.log(`Disconnected from ${connection.toCID().toString()}`);
+		  //console.log(`Disconnected from ${connection.toCID().toString()}`);
 		});
 
+	  this.libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
+		const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
+		//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
+		//console.log(this.libp2p.getMultiaddrs())
+		const addresses = []
+		peer.addresses.forEach((addr)=>{
+			//console.log(addr.multiaddr.toString())
+			addresses.push(addr.multiaddr.toString())
+		})
+		console.log('addresses',addresses)
+	  })
+
+	}
+	
+	getPeers(){
+		return this.libp2p.getPeers()
 	}
 	
 	static async createWebpeer(){
@@ -54,7 +88,7 @@ class webpeerjs{
 		
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev')
 		
-		const { bootstrapAddrs, relayListenAddrs } = await getBootstrapMultiaddrs(delegatedClient)
+		//const { bootstrapAddrs, relayListenAddrs } = await getBootstrapMultiaddrs(delegatedClient)
 		
 		const blockstore = new IDBBlockstore(config.CONFIG_BLOCKSTORE_PATH)
 		await blockstore.open()
@@ -64,14 +98,14 @@ class webpeerjs{
 			datastore,
 			addresses: {
 			  listen: [
-				'/webrtc',
-				...relayListenAddrs,
+				//'/webrtc',
+				//...relayListenAddrs,
 			  ],
 			},
 			transports:[
 				webTransport(),
-				webSockets(),
-				  webRTC({
+				//webSockets(),
+				  /*webRTC({
 					rtcConfiguration: {
 					  iceServers: [
 						{
@@ -79,8 +113,8 @@ class webpeerjs{
 						},
 					  ],
 					},
-				  }),
-				  webRTCDirect(),				
+				  }),*/
+				  //webRTCDirect(),				
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 				}),
@@ -102,8 +136,8 @@ class webpeerjs{
 			  }),
 			  bootstrap({
 				list: 
-					bootstrapAddrs,
-					//config.CONFIG_KNOWN_BOOTSTRAP_ADDRS
+					//bootstrapAddrs,
+					config.CONFIG_KNOWN_BOOTSTRAP_ADDRS
 			  }),
 			],
 			services: {
@@ -112,7 +146,7 @@ class webpeerjs{
 				msgIdFn: msgIdFnStrictNoSign,
 				ignoreDuplicatePublishError: true,
 			  }),
-			  delegatedRouting: () => delegatedClient,
+			  //delegatedRouting: () => delegatedClient,
 			  identify: identify(),
 			},
 		})
@@ -124,25 +158,25 @@ class webpeerjs{
 		// print out listening addresses
 		console.log('listening on addresses:')
 		libp2p.getMultiaddrs().forEach((addr) => {
-		  console.log(addr.toString())
+		  //console.log(addr.toString())
 		})
 
-	  libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
+	  /*libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
 		const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 		console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
-	  })
+	  })*/
 		
-		const addr = '/ip4/139.178.91.71/udp/4001/quic-v1/webtransport/certhash/uEiDYGZMqjz8wsz59DHA4iJin4nqTUfuJhq9AeAZlHBrmvg/certhash/uEiBXLv0dkEqbhmcinRbwj8b_3vWs0kWwf1-fiaz5wS-tew'
+		//const addr = '/ip4/139.178.91.71/udp/4001/quic-v1/webtransport/certhash/uEiDYGZMqjz8wsz59DHA4iJin4nqTUfuJhq9AeAZlHBrmvg/certhash/uEiBXLv0dkEqbhmcinRbwj8b_3vWs0kWwf1-fiaz5wS-tew'
 		
 		//await libp2p.dial(multiaddr(addr))
 
-		/*const helia = await createHelia({
+		const helia = await createHelia({
 			datastore,
 			blockstore,
 			libp2p
-		})*/
+		})
 		
-		return new webpeerjs(libp2p)
+		return new webpeerjs(helia)
 	}
 }
 
@@ -160,8 +194,11 @@ async function getBootstrapMultiaddrs(client)
       for (const maddr of p.Addrs) {
         const protos = maddr.protoNames()
         if (
-          (protos.includes('webtransport') || protos.includes('webrtc-direct')) &&
-          protos.includes('certhash')
+          (
+			protos.includes('webtransport') 
+			//|| protos.includes('webrtc-direct')
+		  ) 
+		  && protos.includes('certhash')
         ) {
           if (maddr.nodeAddress().address === '127.0.0.1') continue // skip loopback
           bootstrapAddrs.push(maddr.toString())
