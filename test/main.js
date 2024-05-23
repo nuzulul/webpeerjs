@@ -6,8 +6,21 @@ const discoveredPeerCountEl = document.getElementById('discoveredPeerCount')
 const connectedPeerCountEl = document.getElementById('connectedPeerCount')
 const connectedPeersListEl = document.getElementById('connectedPeersList')
 const multiaddressEl = document.getElementById('multiaddress')
+const listenAddressCountEl = document.getElementById('listenAddressCount')
 
 const node = await webpeerjs.createWebpeer()
+
+node.onListenAddressChange((address)=>{
+	//console.log('address',address)
+	//const str = JSON.stringify(address)
+	listenAddressCountEl.innerHTML = address.length
+	multiaddressEl.innerHTML = ''
+	for(const addr of address){
+		const addrEl = document.createElement('li')
+		addrEl.innerText = addr
+		multiaddressEl.appendChild(addrEl)
+	}
+})
 
 setInterval(() => {
 	statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
