@@ -7,6 +7,9 @@ export const CONFIG_MIN_CONNECTIONS = 0
 export const CONFIG_DISCOVER_RELAYS = 2
 export const CONFIG_PUBSUB_PEER_DISCOVERY = prefix+'-peer-discovery'
 export const CONFIG_PUPSUB_TOPIC = prefix+'-room'
+export const CONFIG_DELEGATED_API = 'https://delegated-ipfs.dev'
+export const CONFIG_DNS_RESOLVER = 'https://dns.google/resolve'
+export const CONFIG_KNOWN_BOOTSTRAP_DNS = '_dnsaddr.bootstrap.libp2p.io'
 
 export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 	{
@@ -136,7 +139,3 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
 	'QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
 	'QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
 	]
-	
-export const CONFIG_LISTEN_ADDRS = [
-    
-]
