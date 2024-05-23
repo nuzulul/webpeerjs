@@ -8,39 +8,43 @@ const connectedPeersListEl = document.getElementById('connectedPeersList')
 const multiaddressEl = document.getElementById('multiaddress')
 const listenAddressCountEl = document.getElementById('listenAddressCount')
 
-const node = await webpeerjs.createWebpeer()
+void async function main() {
 
-node.onListenAddressChange((address)=>{
-	//console.log('address',address)
-	//const str = JSON.stringify(address)
-	listenAddressCountEl.innerHTML = address.length
-	multiaddressEl.innerHTML = ''
-	for(const addr of address){
-		const addrEl = document.createElement('li')
-		addrEl.innerText = addr
-		multiaddressEl.appendChild(addrEl)
+	const node = await webpeerjs.createWebpeer()
+
+	node.onListenAddressChange((address)=>{
+		//console.log('address',address)
+		//const str = JSON.stringify(address)
+		listenAddressCountEl.innerHTML = address.length
+		multiaddressEl.innerHTML = ''
+		for(const addr of address){
+			const addrEl = document.createElement('li')
+			addrEl.innerText = addr
+			multiaddressEl.appendChild(addrEl)
+		}
+	})
+
+	setInterval(() => {
+		statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
+		updateConnectedPeers()
+		updateDiscoveredPeers()
+	}, 500)
+
+	nodeIdEl.innerHTML = node.id
+
+	const updateDiscoveredPeers = () => {
+	  discoveredPeerCountEl.innerHTML = node.discoveredPeers.size
 	}
-})
 
-setInterval(() => {
-	statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
-	updateConnectedPeers()
-	updateDiscoveredPeers()
-}, 500)
-
-nodeIdEl.innerHTML = node.id
-
-const updateDiscoveredPeers = () => {
-  discoveredPeerCountEl.innerHTML = node.discoveredPeers.size
-}
-
-const updateConnectedPeers = () => {
-  const peers = node.getPeers()
-  connectedPeerCountEl.innerHTML = peers.length
-  connectedPeersListEl.innerHTML = ''
-  for (const peer of peers) {
-    const peerEl = document.createElement('li')
-    peerEl.innerText = peer.toString()
-    connectedPeersListEl.appendChild(peerEl)
-  }
-}
+	const updateConnectedPeers = () => {
+	  const peers = node.getPeers()
+	  connectedPeerCountEl.innerHTML = peers.length
+	  connectedPeersListEl.innerHTML = ''
+	  for (const peer of peers) {
+		const peerEl = document.createElement('li')
+		peerEl.innerText = peer.toString()
+		connectedPeersListEl.appendChild(peerEl)
+	  }
+	}
+	
+}()
