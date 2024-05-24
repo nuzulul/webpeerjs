@@ -34,6 +34,7 @@ class webpeerjs{
 	id
 	status
 	IPFS
+	address
 	
 	constructor(helia,dbstore){
 		
@@ -46,6 +47,7 @@ class webpeerjs{
 		this.#isdialwebtransportonly = true
 		this.#dialedknownbootstrap = new Map()
 		this.#dialeddiscoveredpeers = []
+		this.address = []
 		
 		this.status = (function(libp2p) {
 			return libp2p.status
@@ -100,6 +102,7 @@ class webpeerjs{
 				addresses.push(addr.multiaddr.toString())
 			})
 			this.#ListenAddressChange(addresses)
+			this.address = addresses
 		})
 		  
 		this.#dialKnownPeers()
@@ -213,7 +216,7 @@ class webpeerjs{
 	
 	//Update listen address on change
 	#ListenAddressChange = () => {}
-	onSelfAddress = f => (this.#ListenAddressChange = f)
+	#onSelfAddress = f => (this.#ListenAddressChange = f)
 	
 	
 	//Periodically watch for connection

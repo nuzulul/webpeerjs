@@ -14,22 +14,11 @@ void async function main() {
 	
 	window.node = node
 
-	node.onSelfAddress((address)=>{
-		//console.log('address',address)
-		//const str = JSON.stringify(address)
-		listenAddressCountEl.innerHTML = address.length
-		multiaddressEl.innerHTML = ''
-		for(const addr of address){
-			const addrEl = document.createElement('li')
-			addrEl.innerText = addr
-			multiaddressEl.appendChild(addrEl)
-		}
-	})
-
 	setInterval(() => {
 		statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
 		updateConnectedPeers()
 		updateDiscoveredPeers()
+		updateListenAddress()
 	}, 500)
 
 	nodeIdEl.innerHTML = node.id
@@ -47,6 +36,17 @@ void async function main() {
 		peerEl.innerText = peer.toString()
 		connectedPeersListEl.appendChild(peerEl)
 	  }
+	}
+	
+	const updateListenAddress = () => {
+		const address = node.address
+		listenAddressCountEl.innerHTML = address.length
+		multiaddressEl.innerHTML = ''
+		for(const addr of address){
+			const addrEl = document.createElement('li')
+			addrEl.innerText = addr
+			multiaddressEl.appendChild(addrEl)
+		}
 	}
 	
 }()
