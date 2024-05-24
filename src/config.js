@@ -2,6 +2,7 @@ const prefix = 'webpeerjs'
 export const CONFIG_PREFIX = prefix
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
+export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
 export const CONFIG_MAX_CONNECTIONS = 100
 export const CONFIG_MIN_CONNECTIONS = 1
 export const CONFIG_DISCOVER_RELAYS = 2

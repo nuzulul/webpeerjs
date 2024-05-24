@@ -23,19 +23,20 @@ class webpeerjs{
 	#libp2p
 	#helia
 	#discoveredPeers
+	#webpeersid
+	#dbstore
 	
 	id
 	status
 	IPFS
 	
-	
-	constructor(helia){
+	constructor(helia,dbstore){
 		
 		this.#libp2p = helia.libp2p
-		
 		this.#helia = helia
-		
+		this.#dbstore = dbstore
 		this.#discoveredPeers = new Map()
+		this.#webpeersid = []
 		
 		this.status = (function(libp2p) {
 			return libp2p.status
@@ -95,7 +96,61 @@ class webpeerjs{
 		this.#dialKnownPeers()
 		  
 		this.#watchConnection()
+		
+		this.#connectionTracker()
 
+	}
+	
+	
+	//Track for good connection
+	#connectionTracker(){
+		setInterval(async ()=>{
+			
+			//Save peer address if connection is good
+			const connections = this.#libp2p.getConnections()
+			for(const connect of connections){
+				const peer = connect.remotePeer
+				const remote = connect.remoteAddr
+				const upgraded = connect.timeline.upgraded
+				const limit = 5*60*1000
+				const now = new Date().getTime()
+				const time = now-upgraded
+				if(time>limit){
+					const addr = remote.toString()
+					const id = peer.toString()
+					if(!this.#webpeersid.includes(id)){
+						
+						await this.#dbstore.delete(new Key(id))
+						await this.#dbstore.put([{ key: new Key(id), value: addr }])
+						
+					}
+				}
+			}
+			
+			//Connect to saved good peer address
+			let peers = []
+			for(const peer of this.#libp2p.getPeers()){
+				peers.push(peer.toString())
+			}
+			let list = []
+			for await (const { key, value } of this.#dbstore.query({})) {
+				list.push({key,value})
+			}
+			list.reverse()
+			for(const peer of list){
+				if(peers.includes(peer.key)){
+					continue
+				}else{
+					let mddrs = []
+					const mddr = multiaddr(peer.value)
+					mddrs.push(mddr)
+					this.#dialWebtransport(mddrs)
+					this.#dialWebsocket(mddrs)
+					break
+				}
+			}
+			
+		},30*1000)
 	}
 
 	
@@ -285,6 +340,9 @@ class webpeerjs{
 		//await datastore.destroy()
 		await datastore.open()
 		
+		const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
+		await dbstore.open()
+		
 		
 		//Create libp2p instance
 		const libp2p = await createLibp2p({
@@ -393,7 +451,7 @@ class webpeerjs{
 		
 		
 		//Return webpeerjs class
-		return new webpeerjs(helia)
+		return new webpeerjs(helia,dbstore)
 	}
 }
 

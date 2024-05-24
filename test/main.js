@@ -11,6 +11,8 @@ const listenAddressCountEl = document.getElementById('listenAddressCount')
 void async function main() {
 
 	const node = await webpeerjs.createWebpeer()
+	
+	window.node = node
 
 	node.onSelfAddress((address)=>{
 		//console.log('address',address)
