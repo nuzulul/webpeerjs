@@ -4,6 +4,7 @@ import { unixfs } from '@helia/unixfs'
 import { createLibp2p } from 'libp2p'
 import { IDBBlockstore } from 'blockstore-idb'
 import { IDBDatastore } from 'datastore-idb'
+import { Key } from 'interface-datastore'
 import { webTransport } from '@libp2p/webtransport'
 import { webSockets } from '@libp2p/websockets'
 import * as config from  './config'
@@ -25,6 +26,9 @@ class webpeerjs{
 	#discoveredPeers
 	#webpeersid
 	#dbstore
+	#dialedgoodpeers
+	#isdialwebtransportonly
+	#dialedknownbootstrap
 	
 	id
 	status
@@ -37,6 +41,9 @@ class webpeerjs{
 		this.#dbstore = dbstore
 		this.#discoveredPeers = new Map()
 		this.#webpeersid = []
+		this.#dialedgoodpeers = []
+		this.#isdialwebtransportonly = true
+		this.#dialedknownbootstrap = new Map()
 		
 		this.status = (function(libp2p) {
 			return libp2p.status
@@ -98,7 +105,30 @@ class webpeerjs{
 		this.#watchConnection()
 		
 		this.#connectionTracker()
+		
+		this.#dialrandombootstrap()
 
+	}
+	
+	
+	//Dial random known bootstrap periodically
+	#dialrandombootstrap(){
+		setInterval(()=>{
+			const keys = Array.from(this.#dialedknownbootstrap.keys())
+			const randomKey = Math.floor(Math.random() * keys.length)
+			const id = keys[randomKey]
+			const mddrs = this.#dialedknownbootstrap.get(id)
+			let peers = []
+			for(const peer of this.#libp2p.getPeers()){
+				peers.push(peer.toString())
+			}
+			if(!peers.includes(id)){
+				this.#dialWebtransport(mddrs)
+				if(!this.#isdialwebtransportonly){
+					this.#dialWebsocket(mddrs)
+				}
+			}
+		},5*1000)
 	}
 	
 	
@@ -118,11 +148,9 @@ class webpeerjs{
 				if(time>limit){
 					const addr = remote.toString()
 					const id = peer.toString()
-					if(!this.#webpeersid.includes(id)){
-						
+					if(!this.#webpeersid.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id)){
 						await this.#dbstore.delete(new Key(id))
-						await this.#dbstore.put([{ key: new Key(id), value: addr }])
-						
+						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 					}
 				}
 			}
@@ -134,23 +162,28 @@ class webpeerjs{
 			}
 			let list = []
 			for await (const { key, value } of this.#dbstore.query({})) {
-				list.push({key,value})
+				const id = key.toString().split('/')[1]
+				const addr = new TextDecoder().decode(value)
+				list.push({id,addr})
 			}
 			list.reverse()
 			for(const peer of list){
-				if(peers.includes(peer.key)){
+				if(peers.includes(peer.id) || this.#dialedgoodpeers.includes(peer.id)){
 					continue
 				}else{
+					this.#dialedgoodpeers.push(peer.id)
 					let mddrs = []
-					const mddr = multiaddr(peer.value)
+					const mddr = multiaddr(peer.addr)
 					mddrs.push(mddr)
 					this.#dialWebtransport(mddrs)
-					this.#dialWebsocket(mddrs)
+					if(!this.#isdialwebtransportonly){
+						this.#dialWebsocket(mddrs)
+					}
 					break
 				}
 			}
 			
-		},30*1000)
+		},15*1000)
 	}
 
 	
@@ -207,6 +240,7 @@ class webpeerjs{
 				mddrs.push(peermddr)
 			}
 			this.#dialWebtransport(mddrs)
+			this.#dialedknownbootstrap.set(id,mddrs)
 		}
 	}
 	
@@ -229,6 +263,7 @@ class webpeerjs{
 				mddrs.push(peermddr)
 			}
 			this.#dialWebtransport(mddrs)
+			this.#dialedknownbootstrap.set(id.toString(),mddrs)
 		}
 	}
 	
@@ -260,6 +295,7 @@ class webpeerjs{
 				mddrs.push(peermddr)
 			}
 			this.#dialWebtransport(mddrs)
+			this.#dialedknownbootstrap.set(id.toString(),mddrs)
 		}
 		
 	}
@@ -277,13 +313,13 @@ class webpeerjs{
 			const arr = dnsitem.data.split('/')
 			const id = arr.pop()
 			const dnsaddr = '_dnsaddr.'+arr[2]
-			this.#dialDNSWebsocketWebtransport(dnsaddr)
+			this.#dialDNSWebsocketWebtransport(id,dnsaddr)
 		}
 	}
 	
 	
 	//Dial DNS with webtransport and websocket
-	async #dialDNSWebsocketWebtransport(dnsaddr){
+	async #dialDNSWebsocketWebtransport(id,dnsaddr){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const response = await fetch(dnsresolver+'?name='+dnsaddr+'&type=txt')
 		const json = await response.json()
@@ -297,6 +333,8 @@ class webpeerjs{
 		}
 		this.#dialWebtransport(mddrs)
 		this.#dialWebsocket(mddrs)
+		this.#isdialwebtransportonly = false
+		this.#dialedknownbootstrap.set(id,mddrs)
 	}
 	
 	
@@ -439,7 +477,7 @@ class webpeerjs{
 		//Subscribe to pupsub topic
 		libp2p.services.pubsub.subscribe(config.CONFIG_PUPSUB_TOPIC)
 		
-		console.log(`Node started with id ${libp2p.peerId.toString()}`)
+		//console.log(`Node started with id ${libp2p.peerId.toString()}`)
 
 		
 		//Create helia ipfs instance
