@@ -22,10 +22,12 @@ class webpeerjs{
 	
 	#libp2p
 	#helia
-	IPFS
-	status
+	#discoveredPeers
+	
 	id
-	discoveredPeers
+	status
+	IPFS
+	
 	
 	constructor(helia){
 		
@@ -33,18 +35,18 @@ class webpeerjs{
 		
 		this.#helia = helia
 		
+		this.#discoveredPeers = new Map()
+		
 		this.status = (function(libp2p) {
 			return libp2p.status
 		})(this.#libp2p);
 
-		this.IPFS = (function(helia,libp2p) {
-			const obj = {helia,libp2p}
+		this.IPFS = (function(helia,libp2p,discoveredPeers) {
+			const obj = {helia,libp2p,discoveredPeers}
 			return obj
-		})(this.#helia,this.#libp2p);
+		})(this.#helia,this.#libp2p,this.#discoveredPeers);
 		
 		this.id = this.#libp2p.peerId.toString()
-		
-		this.discoveredPeers = new Map()
 		
 		
 		//Listen to peer connect event
@@ -58,7 +60,7 @@ class webpeerjs{
 		this.#libp2p.addEventListener('peer:discovery', (evt) => {
 			//console.log('Discovered:', evt.detail.id.toString())
 			//console.log('Discovered:', evt.detail.multiaddrs.toString())
-			this.discoveredPeers.set(evt.detail.id.toString(), evt.detail)
+			this.#discoveredPeers.set(evt.detail.id.toString(), evt.detail)
 			if(evt.detail.multiaddrs.toString() != ''){
 				let mddrs = []
 				const multiaddrs = evt.detail.multiaddrs
@@ -99,7 +101,7 @@ class webpeerjs{
 	
 	//Update listen address on change
 	#ListenAddressChange = () => {}
-	onListenAddressChange = f => (this.#ListenAddressChange = f)
+	onSelfAddress = f => (this.#ListenAddressChange = f)
 	
 	
 	//Periodically watch for connection
@@ -270,12 +272,6 @@ class webpeerjs{
 				  //console.log(`failed to dial websocket multiaddr: %o`, addr)
 				}
 			  }
-	}
-	
-	
-	//Get peers address
-	getPeers(){
-		return this.#libp2p.getPeers()
 	}
 	
 	

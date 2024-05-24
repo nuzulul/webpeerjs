@@ -12,7 +12,7 @@ void async function main() {
 
 	const node = await webpeerjs.createWebpeer()
 
-	node.onListenAddressChange((address)=>{
+	node.onSelfAddress((address)=>{
 		//console.log('address',address)
 		//const str = JSON.stringify(address)
 		listenAddressCountEl.innerHTML = address.length
@@ -33,11 +33,11 @@ void async function main() {
 	nodeIdEl.innerHTML = node.id
 
 	const updateDiscoveredPeers = () => {
-	  discoveredPeerCountEl.innerHTML = node.discoveredPeers.size
+	  discoveredPeerCountEl.innerHTML = node.IPFS.discoveredPeers.size
 	}
 
 	const updateConnectedPeers = () => {
-	  const peers = node.getPeers()
+	  const peers = node.IPFS.libp2p.getPeers()
 	  connectedPeerCountEl.innerHTML = peers.length
 	  connectedPeersListEl.innerHTML = ''
 	  for (const peer of peers) {
