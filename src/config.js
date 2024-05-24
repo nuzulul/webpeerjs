@@ -146,6 +146,24 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 				"Schema": "peer"
 			}
 		]
+	},
+	{
+		"Peers": [
+			{
+				"Addrs": [
+					"/ip4/174.136.97.179/udp/4001/quic-v1",
+					"/ip6/2607:f2f8:a880::50/udp/4002/quic-v1/webtransport/certhash/uEiBF7KOka9hhb2IjhUd-OkfgTFOf-VpgV7fwvMkKOkMrdQ/certhash/uEiDxVhDwzFlnorujU_rjTnO_TTLRMlXxzPLEgaG-1xOPkA",
+					"/ip4/174.136.97.179/udp/4001/quic-v1/webtransport/certhash/uEiBF7KOka9hhb2IjhUd-OkfgTFOf-VpgV7fwvMkKOkMrdQ/certhash/uEiDxVhDwzFlnorujU_rjTnO_TTLRMlXxzPLEgaG-1xOPkA",
+					"/ip6/2607:f2f8:a880::50/udp/4001/quic-v1",
+					"/ip4/174.136.97.179/udp/4002/quic-v1/webtransport/certhash/uEiBF7KOka9hhb2IjhUd-OkfgTFOf-VpgV7fwvMkKOkMrdQ/certhash/uEiDxVhDwzFlnorujU_rjTnO_TTLRMlXxzPLEgaG-1xOPkA",
+					"/ip6/2607:f2f8:a880::50/tcp/4001",
+					"/ip6/2607:f2f8:a880::50/udp/4001/quic-v1/webtransport/certhash/uEiBF7KOka9hhb2IjhUd-OkfgTFOf-VpgV7fwvMkKOkMrdQ/certhash/uEiDxVhDwzFlnorujU_rjTnO_TTLRMlXxzPLEgaG-1xOPkA",
+					"/ip4/174.136.97.179/tcp/4001"
+				],
+				"ID": "12D3KooWSHbugDEQeWm2LjtRRMpNgLu6oZ8zkX8XcTwYMAewVekP",
+				"Schema": "peer"
+			}
+		]
 	}
 ]
 
@@ -153,6 +171,7 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
 	'12D3KooWGahRw3ZnM4gAyd9FK75v4Bp5keFYTvkcAwhpEm28wbV3',
 	'12D3KooWFhXabKDwALpzqMbto94sB7rvmZ6M28hs9Y9xSopDKwQr',
 	'12D3KooWPEDBmt7vm6FNNYuqaA4n2qMUZ6wPK5NcRc8t6KpqgRkV',
+	'12D3KooWSHbugDEQeWm2LjtRRMpNgLu6oZ8zkX8XcTwYMAewVekP',
 	'QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
 	'QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
 	'QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',

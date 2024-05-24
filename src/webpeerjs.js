@@ -29,6 +29,7 @@ class webpeerjs{
 	#dialedgoodpeers
 	#isdialwebtransportonly
 	#dialedknownbootstrap
+	#dialeddiscoveredpeers
 	
 	id
 	status
@@ -44,6 +45,7 @@ class webpeerjs{
 		this.#dialedgoodpeers = []
 		this.#isdialwebtransportonly = true
 		this.#dialedknownbootstrap = new Map()
+		this.#dialeddiscoveredpeers = []
 		
 		this.status = (function(libp2p) {
 			return libp2p.status
@@ -106,8 +108,30 @@ class webpeerjs{
 		
 		this.#connectionTracker()
 		
-		this.#dialrandombootstrap()
+		//this.#dialrandombootstrap()
+		
+		//this.#dialdiscoveredpeers()
 
+	}
+	
+	
+	//Dial discovered peers
+	#dialdiscoveredpeers(){
+		setInterval(()=>{
+			const keys = Array.from(this.#discoveredPeers.keys())
+			for(const key of keys){
+				if(!this.#dialeddiscoveredpeers.includes(key)){
+					this.#dialeddiscoveredpeers.push(key)
+					const peer = this.#discoveredPeers.get(key)
+					const mddrs = peer.multiaddrs
+					this.#dialWebtransport(mddrs)
+					if(!this.#isdialwebtransportonly){
+						this.#dialWebsocket(mddrs)
+					}
+					break
+				}
+			}
+		},10*1000)
 	}
 	
 	
@@ -128,7 +152,7 @@ class webpeerjs{
 					this.#dialWebsocket(mddrs)
 				}
 			}
-		},5*1000)
+		},15*1000)
 	}
 	
 	
@@ -183,7 +207,7 @@ class webpeerjs{
 				}
 			}
 			
-		},15*1000)
+		},5*1000)
 	}
 
 	
