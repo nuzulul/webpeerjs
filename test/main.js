@@ -49,4 +49,13 @@ void async function main() {
 		}
 	}
 	
+	const [sendMessage,listenMessage] = node.joinRoom('test')
+	listenMessage((msg)=>{
+		console.log(msg)
+	})
+	
+	setInterval(()=>{
+		sendMessage(node.id)
+	},2000)
+	
 }()

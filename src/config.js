@@ -164,6 +164,22 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 				"Schema": "peer"
 			}
 		]
+	},
+	{
+		"Peers": [
+			{
+				"Addrs": [
+					"/ip6/2a03:4000:46:26e::c17/udp/443/quic-v1/webtransport/certhash/uEiAortGu7HNi8-pV9onPFkTwykrnWuJEqYf7zbQVE1FEtg/certhash/uEiB5Z8j3pdTJU_TDYoJ-GgUQSaXOmvKIGmASL9s-p3VHQA",
+					"/ip4/45.83.104.156/udp/443/quic-v1",
+					"/ip4/45.83.104.156/udp/443/quic-v1/webtransport/certhash/uEiAortGu7HNi8-pV9onPFkTwykrnWuJEqYf7zbQVE1FEtg/certhash/uEiB5Z8j3pdTJU_TDYoJ-GgUQSaXOmvKIGmASL9s-p3VHQA",
+					"/ip6/2a03:4000:46:26e::c17/tcp/443",
+					"/ip6/2a03:4000:46:26e::c17/udp/443/quic-v1",
+					"/ip4/45.83.104.156/tcp/443"
+				],
+				"ID": "12D3KooWASoxFpwwy8JDdu4Tm57mhESsnbFPogam9VVmhR95FGXr",
+				"Schema": "peer"
+			}
+		]
 	}
 ]
 
@@ -172,6 +188,7 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
 	'12D3KooWFhXabKDwALpzqMbto94sB7rvmZ6M28hs9Y9xSopDKwQr',
 	'12D3KooWPEDBmt7vm6FNNYuqaA4n2qMUZ6wPK5NcRc8t6KpqgRkV',
 	'12D3KooWSHbugDEQeWm2LjtRRMpNgLu6oZ8zkX8XcTwYMAewVekP',
+	'12D3KooWASoxFpwwy8JDdu4Tm57mhESsnbFPogam9VVmhR95FGXr',
 	'QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
 	'QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
 	'QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',

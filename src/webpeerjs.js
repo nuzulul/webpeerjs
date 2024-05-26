@@ -13,23 +13,26 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
-import { identify } from '@libp2p/identify'
+import { identify, identifyPush } from '@libp2p/identify'
 import { multiaddr } from '@multiformats/multiaddr'
 import first from 'it-first'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { mkErr } from './utils'
+import { sha256 } from 'multiformats/hashes/sha2'
 
 class webpeerjs{
 	
 	#libp2p
 	#helia
 	#discoveredPeers
-	#webpeersid
+	#webPeersId
 	#dbstore
-	#dialedgoodpeers
-	#isdialwebtransportonly
-	#dialedknownbootstrap
-	#dialeddiscoveredpeers
+	#dialedGoodPeers
+	#isDialWebtransportOnly
+	#dialedKnownBootstrap
+	#dialedDiscoveredPeers
+	#rooms
 	
 	id
 	status
@@ -42,12 +45,13 @@ class webpeerjs{
 		this.#helia = helia
 		this.#dbstore = dbstore
 		this.#discoveredPeers = new Map()
-		this.#webpeersid = []
-		this.#dialedgoodpeers = []
-		this.#isdialwebtransportonly = true
-		this.#dialedknownbootstrap = new Map()
-		this.#dialeddiscoveredpeers = []
+		this.#webPeersId = []
+		this.#dialedGoodPeers = []
+		this.#isDialWebtransportOnly = true
+		this.#dialedKnownBootstrap = new Map()
+		this.#dialedDiscoveredPeers = []
 		this.address = []
+		this.#rooms = {}
 		
 		this.status = (function(libp2p) {
 			return libp2p.status
@@ -64,18 +68,33 @@ class webpeerjs{
 		//Listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect", (evt) => {
 			const connection = evt.detail;
+			//console.log(evt)
 			//console.log(`Connected to ${connection.toString()}`);
 		});
 
+
+		//Subscribe to pupsub topic
+		this.#libp2p.services.pubsub.addEventListener('message', event => {
+			console.log('on:'+event.detail.topic,event.detail.data)
+			console.log(event)
+			const topic = event.detail.topic
+			const json = JSON.parse(topic)
+			const room = json.room
+			const message = new TextDecoder().decode(event.detail.data)
+			this.#rooms[room].onMessage(message)
+		})
+		
 		
 		//Listen to peer discovery event
 		this.#libp2p.addEventListener('peer:discovery', (evt) => {
+			//console.log(evt)
 			//console.log('Discovered:', evt.detail.id.toString())
 			//console.log('Discovered:', evt.detail.multiaddrs.toString())
 			this.#discoveredPeers.set(evt.detail.id.toString(), evt.detail)
 			if(evt.detail.multiaddrs.toString() != ''){
 				let mddrs = []
 				const multiaddrs = evt.detail.multiaddrs
+				console.log(evt.detail.id.toString(),multiaddrs.toString())
 				for(const addr of multiaddrs){
 					const peeraddr = addr.toString()+'/p2p/'+evt.detail.id.toString()
 					const peermddr = multiaddr(peeraddr)
@@ -104,6 +123,15 @@ class webpeerjs{
 			this.#ListenAddressChange(addresses)
 			this.address = addresses
 		})
+		
+		/*setInterval(async()=>{
+			const connections = this.#libp2p.getConnections()
+			for(const connect of connections){
+				const peer = connect.remotePeer
+				const peerInfo = await this.#libp2p.peerRouting.findPeer(peer)
+				console.log(peerInfo)
+			}
+		},10000)*/
 		  
 		this.#dialKnownPeers()
 		  
@@ -117,18 +145,48 @@ class webpeerjs{
 
 	}
 	
+	joinRoom = room => {
+		if (this.#rooms[room]) {
+			return [
+				this.#rooms[room].sendMessage,
+				this.#rooms[room].listenMessage
+			]
+			
+			if (!room) {
+				throw mkErr('room is required')
+			}
+		}
+		
+		const topic = JSON.stringify({id:config.CONFIG_PREFIX,room})
+		
+		this.#libp2p.services.pubsub.subscribe('topic')
+		
+		this.#rooms[room] = {
+			onMessage : () => {},
+			listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
+			sendMessage : async (message) => {
+				await this.#libp2p.services.pubsub.publish('topic', new TextEncoder().encode(message))
+			}
+		}
+		
+		return [
+			this.#rooms[room].sendMessage,
+			this.#rooms[room].listenMessage
+		]
+	}
+	
 	
 	//Dial discovered peers
 	#dialdiscoveredpeers(){
 		setInterval(()=>{
 			const keys = Array.from(this.#discoveredPeers.keys())
 			for(const key of keys){
-				if(!this.#dialeddiscoveredpeers.includes(key)){
-					this.#dialeddiscoveredpeers.push(key)
+				if(!this.#dialedDiscoveredPeers.includes(key)){
+					this.#dialedDiscoveredPeers.push(key)
 					const peer = this.#discoveredPeers.get(key)
 					const mddrs = peer.multiaddrs
 					this.#dialWebtransport(mddrs)
-					if(!this.#isdialwebtransportonly){
+					if(!this.#isDialWebtransportOnly){
 						this.#dialWebsocket(mddrs)
 					}
 					break
@@ -141,17 +199,17 @@ class webpeerjs{
 	//Dial random known bootstrap periodically
 	#dialrandombootstrap(){
 		setInterval(()=>{
-			const keys = Array.from(this.#dialedknownbootstrap.keys())
+			const keys = Array.from(this.#dialedKnownBootstrap.keys())
 			const randomKey = Math.floor(Math.random() * keys.length)
 			const id = keys[randomKey]
-			const mddrs = this.#dialedknownbootstrap.get(id)
+			const mddrs = this.#dialedKnownBootstrap.get(id)
 			let peers = []
 			for(const peer of this.#libp2p.getPeers()){
 				peers.push(peer.toString())
 			}
 			if(!peers.includes(id)){
 				this.#dialWebtransport(mddrs)
-				if(!this.#isdialwebtransportonly){
+				if(!this.#isDialWebtransportOnly){
 					this.#dialWebsocket(mddrs)
 				}
 			}
@@ -175,7 +233,7 @@ class webpeerjs{
 				if(time>limit){
 					const addr = remote.toString()
 					const id = peer.toString()
-					if(!this.#webpeersid.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id)){
+					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id)){
 						await this.#dbstore.delete(new Key(id))
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 					}
@@ -195,15 +253,15 @@ class webpeerjs{
 			}
 			list.reverse()
 			for(const peer of list){
-				if(peers.includes(peer.id) || this.#dialedgoodpeers.includes(peer.id)){
+				if(peers.includes(peer.id) || this.#dialedGoodPeers.includes(peer.id)){
 					continue
 				}else{
-					this.#dialedgoodpeers.push(peer.id)
+					this.#dialedGoodPeers.push(peer.id)
 					let mddrs = []
 					const mddr = multiaddr(peer.addr)
 					mddrs.push(mddr)
 					this.#dialWebtransport(mddrs)
-					if(!this.#isdialwebtransportonly){
+					if(!this.#isDialWebtransportOnly){
 						this.#dialWebsocket(mddrs)
 					}
 					break
@@ -267,7 +325,7 @@ class webpeerjs{
 				mddrs.push(peermddr)
 			}
 			this.#dialWebtransport(mddrs)
-			this.#dialedknownbootstrap.set(id,mddrs)
+			this.#dialedKnownBootstrap.set(id,mddrs)
 		}
 	}
 	
@@ -290,7 +348,7 @@ class webpeerjs{
 				mddrs.push(peermddr)
 			}
 			this.#dialWebtransport(mddrs)
-			this.#dialedknownbootstrap.set(id.toString(),mddrs)
+			this.#dialedKnownBootstrap.set(id.toString(),mddrs)
 		}
 	}
 	
@@ -322,7 +380,7 @@ class webpeerjs{
 				mddrs.push(peermddr)
 			}
 			this.#dialWebtransport(mddrs)
-			this.#dialedknownbootstrap.set(id.toString(),mddrs)
+			this.#dialedKnownBootstrap.set(id.toString(),mddrs)
 		}
 		
 	}
@@ -360,8 +418,8 @@ class webpeerjs{
 		}
 		this.#dialWebtransport(mddrs)
 		this.#dialWebsocket(mddrs)
-		this.#isdialwebtransportonly = false
-		this.#dialedknownbootstrap.set(id,mddrs)
+		this.#isDialWebtransportOnly = false
+		this.#dialedKnownBootstrap.set(id,mddrs)
 	}
 	
 	
@@ -477,6 +535,7 @@ class webpeerjs{
 				}),
 			  
 				identify: identify(),
+				identifyPush: identifyPush(),
 				aminoDHT: kadDHT({
 					protocol: '/ipfs/kad/1.0.0',
 					peerInfoMapper: removePrivateAddressesMapper,
@@ -501,8 +560,6 @@ class webpeerjs{
 		})
 		
 		
-		//Subscribe to pupsub topic
-		libp2p.services.pubsub.subscribe(config.CONFIG_PUPSUB_TOPIC)
 		
 		//console.log(`Node started with id ${libp2p.peerId.toString()}`)
 
@@ -513,6 +570,8 @@ class webpeerjs{
 			blockstore,
 			libp2p
 		})
+		
+		await helia.libp2p.services.aminoDHT.setMode("server")
 		
 		
 		//Return webpeerjs class
