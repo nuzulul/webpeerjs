@@ -49,13 +49,13 @@ void async function main() {
 		}
 	}
 	
-	const [sendMessage,listenMessage] = node.joinRoom('testing')
+	const [sendMessage,listenMessage] = node.joinRoom('universal-connectivity-browser-peer-discovery')
 	listenMessage((msg)=>{
 		console.log(msg)
 	})
 	
 	setInterval(()=>{
 		sendMessage(node.id)
-	},2000)
+	},5000)
 	
 }()

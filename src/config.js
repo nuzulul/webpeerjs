@@ -6,11 +6,13 @@ export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
 export const CONFIG_MAX_CONNECTIONS = 10000
 export const CONFIG_MIN_CONNECTIONS = 1000
 export const CONFIG_DISCOVER_RELAYS = 2
-export const CONFIG_PUBSUB_PEER_DISCOVERY = ['_peer-discovery._p2p._pubsub','universal-connectivity-browser-peer-discovery',prefix+'-peer-discovery']
+export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectivity-browser-peer-discovery'
+export const CONFIG_PUBSUB_PEER_DISCOVERY = ['_peer-discovery._p2p._pubsub',CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY,prefix+'-peer-discovery']
 export const CONFIG_PUPSUB_TOPIC = prefix+'-room'
 export const CONFIG_DELEGATED_API = 'https://delegated-ipfs.dev'
 export const CONFIG_DNS_RESOLVER = 'https://dns.google/resolve'
 export const CONFIG_KNOWN_BOOTSTRAP_DNS = '_dnsaddr.bootstrap.libp2p.io'
+export const CONFIG_JOIN_ROOM_VERSION = 1
 
 export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 	{

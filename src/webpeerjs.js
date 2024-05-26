@@ -20,6 +20,9 @@ import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { mkErr } from './utils'
 import { sha256 } from 'multiformats/hashes/sha2'
+import { Peer as PBPeer } from '../node_modules/@libp2p/pubsub-peer-discovery/dist/src/peer.js'
+import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
+import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 
 class webpeerjs{
 	
@@ -76,9 +79,24 @@ class webpeerjs{
 		//Subscribe to pupsub topic
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
 			//console.log('on:'+event.detail.topic,event.detail.data)
-			//console.log(event)
+			//console.log('msg',new TextDecoder().decode(event.detail.data))
 			const topic = event.detail.topic
 			if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
+				if(config.CONFIG_JOIN_ROOM_VERSION == 1){
+					try{
+						const peer = PBPeer.decode(event.detail.data)
+						//console.log('receive',uint8ArrayToString(peer.addrs[0]))
+						
+						const msg = uint8ArrayToString(peer.addrs[0])
+						const json = JSON.parse(msg)
+						const id =json.id
+						const room = json.room
+						const message = json.message
+						if(id === config.CONFIG_PREFIX){
+							this.#rooms[room].onMessage(message)
+						}
+					}catch(err){}
+				}
 			}else{
 				const json = JSON.parse(topic)
 				const room = json.room
@@ -168,15 +186,42 @@ class webpeerjs{
 			}
 		}
 		
-		const topic = JSON.stringify({id:config.CONFIG_PREFIX,room})
-		//const topic = room
-		this.#libp2p.services.pubsub.subscribe(topic)
-		
-		this.#rooms[room] = {
-			onMessage : () => {},
-			listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
-			sendMessage : async (message) => {
-				await this.#libp2p.services.pubsub.publish(topic, new TextEncoder().encode(message))
+		//Join room version 1 user pupsub via libp2p universal connectivity
+		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
+
+			const topic = 'universal-connectivity-browser-peer-discovery'
+			//this.#libp2p.services.pubsub.subscribe(topic)
+			
+			this.#rooms[room] = {
+				onMessage : () => {},
+				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
+				sendMessage : async (message) => {
+					//await this.#libp2p.services.pubsub.publish(topic, new TextEncoder().encode(message))
+					const data = JSON.stringify({id:config.CONFIG_PREFIX,room,message})
+					const peer = {
+					  publicKey: this.#libp2p.peerId.publicKey,
+					  addrs: [uint8ArrayFromString(data)],
+					  //addrs: this.#libp2p.getMultiaddrs().map(ma => ma.bytes)
+					  //data:['ok']
+					}
+					const encodedPeer = PBPeer.encode(peer)
+					//console.log('send',uint8ArrayFromString('ok'))
+					await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
+				}
+			}
+		}
+
+		if(config.CONFIG_JOIN_ROOM_VERSION == 2){
+
+			const topic = JSON.stringify({id:config.CONFIG_PREFIX,room})
+			this.#libp2p.services.pubsub.subscribe(topic)
+			
+			this.#rooms[room] = {
+				onMessage : () => {},
+				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
+				sendMessage : async (message) => {
+					await this.#libp2p.services.pubsub.publish(topic, new TextEncoder().encode(message))
+				}
 			}
 		}
 		
