@@ -75,32 +75,43 @@ class webpeerjs{
 
 		//Subscribe to pupsub topic
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
-			console.log('on:'+event.detail.topic,event.detail.data)
-			console.log(event)
+			//console.log('on:'+event.detail.topic,event.detail.data)
+			//console.log(event)
 			const topic = event.detail.topic
-			const json = JSON.parse(topic)
-			const room = json.room
-			const message = new TextDecoder().decode(event.detail.data)
-			this.#rooms[room].onMessage(message)
+			if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
+			}else{
+				const json = JSON.parse(topic)
+				const room = json.room
+				const message = new TextDecoder().decode(event.detail.data)
+				this.#rooms[room].onMessage(message)
+			}
 		})
 		
 		
 		//Listen to peer discovery event
 		this.#libp2p.addEventListener('peer:discovery', (evt) => {
-			//console.log(evt)
+
 			//console.log('Discovered:', evt.detail.id.toString())
 			//console.log('Discovered:', evt.detail.multiaddrs.toString())
 			this.#discoveredPeers.set(evt.detail.id.toString(), evt.detail)
 			if(evt.detail.multiaddrs.toString() != ''){
-				let mddrs = []
 				const multiaddrs = evt.detail.multiaddrs
-				console.log(evt.detail.id.toString(),multiaddrs.toString())
-				for(const addr of multiaddrs){
-					const peeraddr = addr.toString()+'/p2p/'+evt.detail.id.toString()
-					const peermddr = multiaddr(peeraddr)
-					mddrs.push(peermddr)
-				}
-				//this.#dialWebtransport(mddrs)
+				//if(multiaddrs.toString().includes('webtransport')&&multiaddrs.toString().includes('certhash')&&multiaddrs.toString().includes('p2p-circuit')){
+					let mddrs = []
+				
+					for(const addr of multiaddrs){
+						let peeraddr
+						if(addr.toString().includes('/p2p/')){
+							peeraddr = addr.toString()
+						}else{
+							peeraddr = addr.toString()+'/p2p/'+evt.detail.id.toString()
+						}
+						const peermddr = multiaddr(peeraddr)
+						mddrs.push(peermddr)
+					}
+					
+					this.#dialWebtransport(mddrs)
+				//}
 			}
 		})
 
@@ -139,7 +150,7 @@ class webpeerjs{
 		
 		this.#connectionTracker()
 		
-		//this.#dialrandombootstrap()
+		this.#dialRandomBootstrap()
 		
 		//this.#dialdiscoveredpeers()
 
@@ -158,14 +169,14 @@ class webpeerjs{
 		}
 		
 		const topic = JSON.stringify({id:config.CONFIG_PREFIX,room})
-		
-		this.#libp2p.services.pubsub.subscribe('topic')
+		//const topic = room
+		this.#libp2p.services.pubsub.subscribe(topic)
 		
 		this.#rooms[room] = {
 			onMessage : () => {},
 			listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 			sendMessage : async (message) => {
-				await this.#libp2p.services.pubsub.publish('topic', new TextEncoder().encode(message))
+				await this.#libp2p.services.pubsub.publish(topic, new TextEncoder().encode(message))
 			}
 		}
 		
@@ -197,7 +208,7 @@ class webpeerjs{
 	
 	
 	//Dial random known bootstrap periodically
-	#dialrandombootstrap(){
+	#dialRandomBootstrap(){
 		setInterval(()=>{
 			const keys = Array.from(this.#dialedKnownBootstrap.keys())
 			const randomKey = Math.floor(Math.random() * keys.length)
@@ -476,7 +487,7 @@ class webpeerjs{
 			},
 			transports:[
 				webTransport(),		
-				webSockets(),
+				//webSockets(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 				}),
@@ -488,8 +499,7 @@ class webpeerjs{
 				maxIncomingPendingConnections: 10,
 				maxParallelDials: 150, 
 				maxDialsPerPeer: 4, 
-				dialTimeout: 10e3, 
-				autoDial: false
+				dialTimeout: 10e3
 			},
 			connectionEncryption: [noise()],
 			streamMuxers: [
@@ -523,7 +533,7 @@ class webpeerjs{
 			peerDiscovery: [
 				pubsubPeerDiscovery({
 					interval: 10_000,
-					topics: [config.CONFIG_PUBSUB_PEER_DISCOVERY],
+					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY,
 					listenOnly: false,
 				}),
 			],
@@ -545,17 +555,6 @@ class webpeerjs{
 			peerStore: {
 				persistence: true,
 				threshold: 1
-			},
-			config: {
-				dht: {                        
-					kBucketSize: 20,
-					enabled: true,
-					randomWalk: {
-						enabled: true,            
-						interval: 300e3,
-						timeout: 10e3
-					}
-				}
 			}
 		})
 		

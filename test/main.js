@@ -49,7 +49,7 @@ void async function main() {
 		}
 	}
 	
-	const [sendMessage,listenMessage] = node.joinRoom('test')
+	const [sendMessage,listenMessage] = node.joinRoom('testing')
 	listenMessage((msg)=>{
 		console.log(msg)
 	})
