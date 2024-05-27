@@ -83,7 +83,7 @@ class webpeerjs{
 			//console.log(`Connected to ${connection.toString()}`);
 			
 			//announce via joinRoom version 1
-			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]){
+			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0] || this.#webPeersId.includes(connection.toString())){
 				setTimeout(()=>{
 					this.#announce()
 				},1000)
@@ -114,6 +114,7 @@ class webpeerjs{
 							if(signal){
 								if(signal == 'announce'){
 									setTimeout(()=>{this.#answer()},1000)
+									if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 									this.#connectedPeers.set(id,address)
 									this.#connectedPeersArr.length = 0
 									for(const peer of this.#connectedPeers){
@@ -122,6 +123,7 @@ class webpeerjs{
 									}
 								}
 								if(signal == 'answer'){
+									if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 									this.#connectedPeers.set(id,address)
 									this.#connectedPeersArr.length = 0
 									for(const peer of this.#connectedPeers){	
@@ -204,11 +206,21 @@ class webpeerjs{
 			const id = evt.detail.string
 			if(this.#connectedPeers.has(id))
 			{
+									const address = this.#connectedPeers.get(id)
 									this.#connectedPeers.delete(id)
 									this.#connectedPeersArr.length = 0
 									for(const peer of this.#connectedPeers){	
 										const item = {id:peer[0],address:peer[1]}
 										this.#connectedPeersArr.push(item)
+									}
+									let mddrs = []
+									for (const addr of address){
+										const m = multiaddr(addr)
+										mddrs.push(m)
+									}
+									this.#dialWebtransport(mddrs)
+									if(!this.#isDialWebtransportOnly){
+										this.#dialWebsocket(mddrs)
 									}
 			}
 		});
