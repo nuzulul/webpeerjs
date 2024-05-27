@@ -546,7 +546,7 @@ class webpeerjs{
 	//Dial based on known peers ID
 	async #dialKnownID(){
 		const api = config.CONFIG_DELEGATED_API
-		const delegatedClient = createDelegatedRoutingV1HttpApiClient('api')
+		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS
 		const peers = await Promise.all(
 			BOOTSTRAP_PEER_IDS.map((peerId) => first(delegatedClient.getPeers(peerIdFromString(peerId)))),
@@ -579,7 +579,7 @@ class webpeerjs{
 			BOOTSTRAP_PEER_IDS.push(id)
 		}
 		const api = config.CONFIG_DELEGATED_API
-		const delegatedClient = createDelegatedRoutingV1HttpApiClient('api')
+		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 		const peers = await Promise.all(
 			BOOTSTRAP_PEER_IDS.map((peerId) => first(delegatedClient.getPeers(peerIdFromString(peerId)))),
 		)
