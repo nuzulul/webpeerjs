@@ -103,9 +103,26 @@ class webpeerjs{
 				const senderPeerId = event.detail.from.toString()
 				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
 					try{
+						//connect webpeer if disconnected
+						let peers = []
+						for(const peer of this.#libp2p.getPeers()){
+							peers.push(peer.toString())
+						}
+						if(!peers.includes(senderPeerId) && this.#webPeersId.includes(senderPeerId)){
+							const address = this.#discoveredPeers.get(senderPeerId)
+							let mddrs = []
+							for (const addr of address){
+								const m = multiaddr(addr)
+								mddrs.push(m)
+							}
+							this.#dialWebtransport(mddrs)
+							if(!this.#isDialWebtransportOnly){
+								this.#dialWebsocket(mddrs)
+							}
+						}
+						//parse the message over pupsub peer discovery
 						const peer = PBPeer.decode(event.detail.data)
 						const msg = uint8ArrayToString(peer.addrs[0])
-						//console.log(msg)
 						const json = JSON.parse(msg)
 						const prefix =json.prefix
 						const room = json.room
@@ -185,7 +202,7 @@ class webpeerjs{
 			this.#discoveredPeers.set(evt.detail.id.toString(), evt.detail)
 			if(evt.detail.multiaddrs.toString() != ''){
 				const multiaddrs = evt.detail.multiaddrs
-				if(multiaddrs.toString().includes('p2p-circuit')){
+				if(multiaddrs.toString().includes('p2p-circuit')|| multiaddrs.toString().includes('webtransport')){
 					let mddrs = []
 				
 					for(const addr of multiaddrs){
@@ -213,25 +230,39 @@ class webpeerjs{
 			const connection = evt.detail;
 			//console.log(`Disconnected from ${connection.toCID().toString()}`);
 			const id = evt.detail.string
-			if(this.#connectedPeers.has(id))
-			{
-									const address = this.#connectedPeers.get(id)
-									this.#connectedPeers.delete(id)
-									this.#connectedPeersArr.length = 0
-									for(const peer of this.#connectedPeers){	
-										const item = {id:peer[0],address:peer[1]}
-										this.#connectedPeersArr.push(item)
-									}
-									let mddrs = []
-									for (const addr of address){
-										const m = multiaddr(addr)
-										mddrs.push(m)
-									}
-									this.#dialWebtransport(mddrs)
-									if(!this.#isDialWebtransportOnly){
-										this.#dialWebsocket(mddrs)
-									}
-									this.#onDisconnectFn(id)
+			if(this.#connectedPeers.has(id)){
+				const address = this.#connectedPeers.get(id)
+				this.#connectedPeers.delete(id)
+				this.#connectedPeersArr.length = 0
+				for(const peer of this.#connectedPeers){	
+					const item = {id:peer[0],address:peer[1]}
+					this.#connectedPeersArr.push(item)
+				}
+				let mddrs = []
+				for (const addr of address){
+					const m = multiaddr(addr)
+					mddrs.push(m)
+				}
+				this.#dialWebtransport(mddrs)
+				if(!this.#isDialWebtransportOnly){
+					this.#dialWebsocket(mddrs)
+				}
+				this.#onDisconnectFn(id)
+			}
+			else if(this.#dialedKnownBootstrap.has(id)){
+				const mddrs = this.#dialedKnownBootstrap.get(id)
+				this.#dialWebtransport(mddrs)
+				if(!this.#isDialWebtransportOnly){
+					this.#dialWebsocket(mddrs)
+				}
+			}
+			else{
+				const peer = this.#discoveredPeers.get(id)
+				const mddrs = peer.multiaddrs
+				this.#dialWebtransport(mddrs)
+				if(!this.#isDialWebtransportOnly){
+					this.#dialWebsocket(mddrs)
+				}				
 			}
 		});
 		
