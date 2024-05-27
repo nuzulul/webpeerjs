@@ -97,6 +97,7 @@ class webpeerjs{
 			//console.log('on:'+event.detail.topic,event.detail.data)
 			if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 				const topic = event.detail.topic
+				const senderPeerId = event.detail.from.toString()
 				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
 					try{
 						const peer = PBPeer.decode(event.detail.data)
@@ -108,9 +109,10 @@ class webpeerjs{
 						const message = json.message
 						const signal = json.signal
 						const id = json.id
+						if(id != senderPeerId)return
 						const address = json.address
 						if(prefix === config.CONFIG_PREFIX){
-							if(room)this.#rooms[room].onMessage(message)
+							if(room)this.#rooms[room].onMessage(message,id)
 							if(signal){
 								if(signal == 'announce'){
 									setTimeout(()=>{this.#answer()},1000)
@@ -300,7 +302,7 @@ class webpeerjs{
 				onMessage : () => {},
 				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 				sendMessage : async (message) => {
-					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message})
+					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString()})
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
 					  addrs: [uint8ArrayFromString(data)],
