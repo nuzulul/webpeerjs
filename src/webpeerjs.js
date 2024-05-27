@@ -201,6 +201,16 @@ class webpeerjs{
 		this.#libp2p.addEventListener("peer:disconnect", (evt) => {
 			const connection = evt.detail;
 			//console.log(`Disconnected from ${connection.toCID().toString()}`);
+			const id = evt.detail.string
+			if(this.#connectedPeers.has(id))
+			{
+									this.#connectedPeers.delete(id)
+									this.#connectedPeersArr.length = 0
+									for(const peer of this.#connectedPeers){	
+										const item = {id:peer[0],address:peer[1]}
+										this.#connectedPeersArr.push(item)
+									}
+			}
 		});
 		
 		
