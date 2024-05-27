@@ -95,6 +95,9 @@ class webpeerjs{
 		//Subscribe to pupsub topic
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
 			//console.log('on:'+event.detail.topic,event.detail.data)
+			if (event.detail.type !== 'signed') {
+			  return
+			}
 			if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 				const topic = event.detail.topic
 				const senderPeerId = event.detail.from.toString()
