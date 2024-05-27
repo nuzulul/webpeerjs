@@ -222,7 +222,9 @@ class webpeerjs{
 			const addresses = []
 			peer.addresses.forEach((addr)=>{
 				const maddr = addr.multiaddr.toString()+'/p2p/'+id
-				addresses.push(maddr)
+				if(maddr.includes('webtransport') && maddr.includes('certhash')){
+					addresses.push(maddr)
+				}
 			})
 			this.#ListenAddressChange(addresses)
 			this.address = addresses
@@ -621,7 +623,7 @@ class webpeerjs{
 			},
 			transports:[
 				webTransport(),		
-				webSockets(),
+				//webSockets(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 				}),
