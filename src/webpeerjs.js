@@ -119,6 +119,7 @@ class webpeerjs{
 							if(signal){
 								if(signal == 'announce'){
 									setTimeout(()=>{this.#answer()},1000)
+									if(!this.#connectedPeers.has(id))this.#onConnectFn(id)
 									if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 									this.#connectedPeers.set(id,address)
 									this.#connectedPeersArr.length = 0
@@ -126,8 +127,10 @@ class webpeerjs{
 										const item = {id:peer[0],address:peer[1]}
 										this.#connectedPeersArr.push(item)
 									}
+									
 								}
 								if(signal == 'answer'){
+									if(!this.#connectedPeers.has(id))this.#onConnectFn(id)
 									if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 									this.#connectedPeers.set(id,address)
 									this.#connectedPeersArr.length = 0
@@ -135,6 +138,7 @@ class webpeerjs{
 										const item = {id:peer[0],address:peer[1]}
 										this.#connectedPeersArr.push(item)
 									}
+									
 								}
 							}
 						}
@@ -227,6 +231,7 @@ class webpeerjs{
 									if(!this.#isDialWebtransportOnly){
 										this.#dialWebsocket(mddrs)
 									}
+									this.#onDisconnectFn(id)
 			}
 		});
 		
@@ -259,6 +264,19 @@ class webpeerjs{
 		//this.#dialdiscoveredpeers()
 
 	}
+	
+	
+	
+	
+	//Listen on new peer connection
+	#onConnectFn = () => {}
+	onConnect = f => (this.#onConnectFn = f)
+
+
+	//Listen on peer disconnect
+	#onDisconnectFn = () => {}
+	onDisconnect = f => (this.#onDisconnectFn = f)
+	
 
 	//announce and answer via joinRoom version 1
 	async #announce(){
