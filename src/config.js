@@ -3,8 +3,8 @@ export const CONFIG_PREFIX = prefix
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
 export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
-export const CONFIG_MAX_CONNECTIONS = 10000
-export const CONFIG_MIN_CONNECTIONS = 1000
+export const CONFIG_MAX_CONNECTIONS = 100
+export const CONFIG_MIN_CONNECTIONS = 1
 export const CONFIG_DISCOVER_RELAYS = 2
 export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectivity-browser-peer-discovery'
 export const CONFIG_PUBSUB_PEER_DISCOVERY = ['_peer-discovery._p2p._pubsub',CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY,prefix+'-peer-discovery']
@@ -187,8 +187,8 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 ]
 
 export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
-	'12D3KooWGahRw3ZnM4gAyd9FK75v4Bp5keFYTvkcAwhpEm28wbV3',
 	'12D3KooWFhXabKDwALpzqMbto94sB7rvmZ6M28hs9Y9xSopDKwQr',
+	'12D3KooWGahRw3ZnM4gAyd9FK75v4Bp5keFYTvkcAwhpEm28wbV3',
 	'12D3KooWPEDBmt7vm6FNNYuqaA4n2qMUZ6wPK5NcRc8t6KpqgRkV',
 	'12D3KooWSHbugDEQeWm2LjtRRMpNgLu6oZ8zkX8XcTwYMAewVekP',
 	'12D3KooWASoxFpwwy8JDdu4Tm57mhESsnbFPogam9VVmhR95FGXr',

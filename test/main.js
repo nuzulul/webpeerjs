@@ -7,6 +7,8 @@ const connectedPeerCountEl = document.getElementById('connectedPeerCount')
 const connectedPeersListEl = document.getElementById('connectedPeersList')
 const multiaddressEl = document.getElementById('multiaddress')
 const listenAddressCountEl = document.getElementById('listenAddressCount')
+const connectedWebPeerCountEl = document.getElementById('connectedWebPeerCount')
+const connectedWebPeersListEl = document.getElementById('connectedWebPeersList')
 
 void async function main() {
 
@@ -19,6 +21,7 @@ void async function main() {
 		updateConnectedPeers()
 		updateDiscoveredPeers()
 		updateListenAddress()
+		updatePeers()
 	}, 500)
 
 	nodeIdEl.innerHTML = node.id
@@ -47,6 +50,17 @@ void async function main() {
 			addrEl.innerText = addr
 			multiaddressEl.appendChild(addrEl)
 		}
+	}
+	
+	const updatePeers = ()=> {
+		  const peers = node.peers
+		  connectedWebPeerCountEl.innerHTML = peers.length
+		  connectedWebPeersListEl.innerHTML = ''
+		  for (const peer of peers) {
+			const peerEl = document.createElement('li')
+			peerEl.innerText = peer.id
+			connectedWebPeersListEl.appendChild(peerEl)
+		  }
 	}
 	
 	const [sendMessage,listenMessage] = node.joinRoom('universal-connectivity-browser-peer-discovery')

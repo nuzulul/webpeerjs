@@ -18,9 +18,8 @@ import { multiaddr } from '@multiformats/multiaddr'
 import first from 'it-first'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
-import { mkErr } from './utils'
+import { mkErr,PBPeer } from './utils'
 import { sha256 } from 'multiformats/hashes/sha2'
-import { Peer as PBPeer } from '../node_modules/@libp2p/pubsub-peer-discovery/dist/src/peer.js'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 
@@ -36,11 +35,14 @@ class webpeerjs{
 	#dialedKnownBootstrap
 	#dialedDiscoveredPeers
 	#rooms
+	#connectedPeers
+	#connectedPeersArr
 	
 	id
 	status
 	IPFS
 	address
+	peers
 	
 	constructor(helia,dbstore){
 		
@@ -55,6 +57,12 @@ class webpeerjs{
 		this.#dialedDiscoveredPeers = []
 		this.address = []
 		this.#rooms = {}
+		this.#connectedPeers = new Map()
+		this.#connectedPeersArr = []
+		
+		this.peers = (function(f) {
+			return f
+		})(this.#connectedPeersArr);
 		
 		this.status = (function(libp2p) {
 			return libp2p.status
@@ -73,36 +81,88 @@ class webpeerjs{
 			const connection = evt.detail;
 			//console.log(evt)
 			//console.log(`Connected to ${connection.toString()}`);
+			
+			//announce via joinRoom version 1
+			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]){
+				setTimeout(()=>{
+					this.#announce()
+				},1000)
+			}
+			
 		});
 
 
 		//Subscribe to pupsub topic
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
 			//console.log('on:'+event.detail.topic,event.detail.data)
-			//console.log('msg',new TextDecoder().decode(event.detail.data))
-			const topic = event.detail.topic
-			if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
-				if(config.CONFIG_JOIN_ROOM_VERSION == 1){
+			if(config.CONFIG_JOIN_ROOM_VERSION == 1){
+				const topic = event.detail.topic
+				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
 					try{
 						const peer = PBPeer.decode(event.detail.data)
-						//console.log('receive',uint8ArrayToString(peer.addrs[0]))
-						
 						const msg = uint8ArrayToString(peer.addrs[0])
+						//console.log(msg)
 						const json = JSON.parse(msg)
-						const id =json.id
+						const prefix =json.prefix
 						const room = json.room
 						const message = json.message
-						if(id === config.CONFIG_PREFIX){
+						const signal = json.signal
+						const id = json.id
+						const address = json.address
+						if(prefix === config.CONFIG_PREFIX){
+							if(room)this.#rooms[room].onMessage(message)
+							if(signal){
+								if(signal == 'announce'){
+									setTimeout(()=>{this.#answer()},1000)
+									this.#connectedPeers.set(id,address)
+									this.#connectedPeersArr.length = 0
+									for(const peer of this.#connectedPeers){
+										const item = {id:peer[0],address:peer[1]}
+										this.#connectedPeersArr.push(item)
+									}
+								}
+								if(signal == 'answer'){
+									this.#connectedPeers.set(id,address)
+									this.#connectedPeersArr.length = 0
+									for(const peer of this.#connectedPeers){	
+										const item = {id:peer[0],address:peer[1]}
+										this.#connectedPeersArr.push(item)
+									}
+								}
+							}
+						}
+
+					}catch(err){}
+				}else{
+					const json = JSON.parse(topic)
+					const room = json.room
+					const message = new TextDecoder().decode(event.detail.data)
+					this.#rooms[room].onMessage(message)
+				}
+			}
+			
+			if(config.CONFIG_JOIN_ROOM_VERSION == 2){
+				const topic = event.detail.topic
+				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
+					try{
+						const peer = PBPeer.decode(event.detail.data)						
+						const msg = uint8ArrayToString(peer.addrs[0])
+						const json = JSON.parse(msg)
+						const prefix =json.prefix
+						const room = json.room
+						const message = json.message
+						if(prefix === config.CONFIG_PREFIX){
 							this.#rooms[room].onMessage(message)
 						}
 					}catch(err){}
+				}else{
+					const json = JSON.parse(topic)
+					const room = json.room
+					const message = new TextDecoder().decode(event.detail.data)
+					this.#rooms[room].onMessage(message)
 				}
-			}else{
-				const json = JSON.parse(topic)
-				const room = json.room
-				const message = new TextDecoder().decode(event.detail.data)
-				this.#rooms[room].onMessage(message)
 			}
+			
 		})
 		
 		
@@ -114,7 +174,7 @@ class webpeerjs{
 			this.#discoveredPeers.set(evt.detail.id.toString(), evt.detail)
 			if(evt.detail.multiaddrs.toString() != ''){
 				const multiaddrs = evt.detail.multiaddrs
-				//if(multiaddrs.toString().includes('webtransport')&&multiaddrs.toString().includes('certhash')&&multiaddrs.toString().includes('p2p-circuit')){
+				if(multiaddrs.toString().includes('p2p-circuit')){
 					let mddrs = []
 				
 					for(const addr of multiaddrs){
@@ -129,7 +189,10 @@ class webpeerjs{
 					}
 					
 					this.#dialWebtransport(mddrs)
-				//}
+					if(!this.#isDialWebtransportOnly){
+						this.#dialWebsocket(mddrs)
+					}
+				}
 			}
 		})
 
@@ -145,22 +208,16 @@ class webpeerjs{
 		this.#libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
 			const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 			//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
+			const id = peer.id.toString()
 			const addresses = []
 			peer.addresses.forEach((addr)=>{
-				addresses.push(addr.multiaddr.toString())
+				const maddr = addr.multiaddr.toString()+'/p2p/'+id
+				addresses.push(maddr)
 			})
 			this.#ListenAddressChange(addresses)
 			this.address = addresses
+			this.#answer()
 		})
-		
-		/*setInterval(async()=>{
-			const connections = this.#libp2p.getConnections()
-			for(const connect of connections){
-				const peer = connect.remotePeer
-				const peerInfo = await this.#libp2p.peerRouting.findPeer(peer)
-				console.log(peerInfo)
-			}
-		},10000)*/
 		  
 		this.#dialKnownPeers()
 		  
@@ -173,6 +230,29 @@ class webpeerjs{
 		//this.#dialdiscoveredpeers()
 
 	}
+
+	//announce and answer via joinRoom version 1
+	async #announce(){
+			const topic = config.CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address})
+			const peer = {
+			  publicKey: this.#libp2p.peerId.publicKey,
+			  addrs: [uint8ArrayFromString(data)],
+			}
+			const encodedPeer = PBPeer.encode(peer)
+			await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
+	}
+	async #answer(){
+			const topic = config.CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'answer',id:this.#libp2p.peerId.toString(),address:this.address})
+			const peer = {
+			  publicKey: this.#libp2p.peerId.publicKey,
+			  addrs: [uint8ArrayFromString(data)],
+			}
+			const encodedPeer = PBPeer.encode(peer)
+			await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
+	}
+
 	
 	joinRoom = room => {
 		if (this.#rooms[room]) {
@@ -189,28 +269,25 @@ class webpeerjs{
 		//Join room version 1 user pupsub via libp2p universal connectivity
 		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 
-			const topic = 'universal-connectivity-browser-peer-discovery'
+			const topic = config.CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY
 			//this.#libp2p.services.pubsub.subscribe(topic)
 			
 			this.#rooms[room] = {
 				onMessage : () => {},
 				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 				sendMessage : async (message) => {
-					//await this.#libp2p.services.pubsub.publish(topic, new TextEncoder().encode(message))
-					const data = JSON.stringify({id:config.CONFIG_PREFIX,room,message})
+					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message})
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
 					  addrs: [uint8ArrayFromString(data)],
-					  //addrs: this.#libp2p.getMultiaddrs().map(ma => ma.bytes)
-					  //data:['ok']
 					}
 					const encodedPeer = PBPeer.encode(peer)
-					//console.log('send',uint8ArrayFromString('ok'))
 					await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
 				}
 			}
 		}
 
+		//not implemented yet
 		if(config.CONFIG_JOIN_ROOM_VERSION == 2){
 
 			const topic = JSON.stringify({id:config.CONFIG_PREFIX,room})
@@ -257,7 +334,9 @@ class webpeerjs{
 		setInterval(()=>{
 			const keys = Array.from(this.#dialedKnownBootstrap.keys())
 			const randomKey = Math.floor(Math.random() * keys.length)
-			const id = keys[randomKey]
+			let id = keys[randomKey]
+			//currently need universal connectivity id for webpeer discovery and joinRoom version 1 to work
+			id = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]
 			const mddrs = this.#dialedKnownBootstrap.get(id)
 			let peers = []
 			for(const peer of this.#libp2p.getPeers()){
@@ -269,7 +348,7 @@ class webpeerjs{
 					this.#dialWebsocket(mddrs)
 				}
 			}
-		},15*1000)
+		},10*1000)
 	}
 	
 	
@@ -532,7 +611,7 @@ class webpeerjs{
 			},
 			transports:[
 				webTransport(),		
-				//webSockets(),
+				webSockets(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 				}),
