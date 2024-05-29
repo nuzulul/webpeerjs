@@ -4,7 +4,7 @@ export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
 export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
 export const CONFIG_MAX_CONNECTIONS = 100
-export const CONFIG_MIN_CONNECTIONS = 0
+export const CONFIG_MIN_CONNECTIONS = 1
 export const CONFIG_DISCOVER_RELAYS = 2
 export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectivity-browser-peer-discovery'
 export const CONFIG_PUBSUB_PEER_DISCOVERY = ['_peer-discovery._p2p._pubsub',CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY,prefix+'-peer-discovery']
@@ -240,19 +240,6 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 		"Peers": [
 			{
 				"Addrs": [
-					"/ip4/94.23.103.77/udp/4001/quic-v1/webtransport/certhash/uEiBER48u4k1bZeXaR9UnzcgXNEy87f69u9IEgbKZPG1hWA/certhash/uEiBPIpSgjKxIbFenwYQRvmidVp_rXU4eiK7ar5mnDuMmaA",
-					"/ip4/94.23.103.77/tcp/4001",
-					"/ip4/94.23.103.77/udp/4001/quic-v1"
-				],
-				"ID": "12D3KooWP6x7cbrHdxLPmJT9wX8kQJTFNxQMKAHYAV1vHU4GDBaK",
-				"Schema": "peer"
-			}
-		]
-	},
-	{
-		"Peers": [
-			{
-				"Addrs": [
 					"/ip4/89.58.11.155/udp/4001/quic-v1/webtransport/certhash/uEiDDgTBtcIstrvU4MRSfcD7tYDIsQrnGAxW6Oh5AoLm4Ig/certhash/uEiAXHXsg1wBb-sPvpBw8BVpRFxso1milPa801TxjPNYQ3w",
 					"/ip4/89.58.11.155/udp/4001/quic",
 					"/ip6/64:ff9b::593a:b9b/udp/4001/quic-v1/webtransport/certhash/uEiDDgTBtcIstrvU4MRSfcD7tYDIsQrnGAxW6Oh5AoLm4Ig/certhash/uEiAXHXsg1wBb-sPvpBw8BVpRFxso1milPa801TxjPNYQ3w",
@@ -265,6 +252,19 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 			}
 		]
 	},	
+	{
+		"Peers": [
+			{
+				"Addrs": [
+					"/ip4/94.23.103.77/udp/4001/quic-v1/webtransport/certhash/uEiBER48u4k1bZeXaR9UnzcgXNEy87f69u9IEgbKZPG1hWA/certhash/uEiBPIpSgjKxIbFenwYQRvmidVp_rXU4eiK7ar5mnDuMmaA",
+					"/ip4/94.23.103.77/tcp/4001",
+					"/ip4/94.23.103.77/udp/4001/quic-v1"
+				],
+				"ID": "12D3KooWP6x7cbrHdxLPmJT9wX8kQJTFNxQMKAHYAV1vHU4GDBaK",
+				"Schema": "peer"
+			}
+		]
+	},
 	{
 		"Peers": [
 			{
@@ -290,7 +290,7 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 				"Schema": "peer"
 			}
 		]
-	}	
+	}
 
 ]
 
@@ -308,8 +308,8 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
 	'12D3KooWHh98YpAkJsn3ULjMjK1n9QVkXmi8Sb3gTDMatHxCmDP5',
 	'12D3KooWS79EhkPU7ESUwgG4vyHHzW9FDNZLoWVth9b5N5NSrvaj',
 	'12D3KooWBbkCD5MpJhMc1mfPAVGEyVkQnyxPKGS7AHwDqQM2JUsk',
-	'12D3KooWP6x7cbrHdxLPmJT9wX8kQJTFNxQMKAHYAV1vHU4GDBaK',
 	'12D3KooWKLdecs31Zmo2pLBjR9HY2vWo3VwM4eBm21Czeucbe6FL',
+	'12D3KooWP6x7cbrHdxLPmJT9wX8kQJTFNxQMKAHYAV1vHU4GDBaK',
 	'12D3KooWLenMbevq4cbXWDh6QgXhbi3RhqyuVKgKmCGU3sfLtMtx',
 	'12D3KooWQXs6KwyC464BUdSfSUpvswUz2Y2JZG4rVSsi73Ag2Zq2'
 	]

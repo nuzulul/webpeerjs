@@ -69,6 +69,12 @@ class webpeerjs{
 	//map [id,addr] of all connections (addr is string of address)
 	#connections
 	
+	//track disconnect event
+	#trackDisconnect
+	
+	//list of dial multiaddress queue
+	#dialQueue
+	
 	id
 	status
 	IPFS
@@ -93,6 +99,8 @@ class webpeerjs{
 		this.#connectedPeersArr = []
 		this.#connectionTrackerStore = new Map()
 		this.#connections = new Map()
+		this.#trackDisconnect = new Map()
+		this.#dialQueue = []
 		
 		this.peers = (function(f) {
 			return f
@@ -110,7 +118,7 @@ class webpeerjs{
 		this.id = this.#libp2p.peerId.toString()
 		
 		
-		//Listen to peer connect event
+		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect", (evt) => {
 			//console.log(`Connected to ${connection.toString()}`);
 			
@@ -132,7 +140,7 @@ class webpeerjs{
 		});
 
 
-		//Subscribe to pupsub topic
+		//subscribe to pupsub topic
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
 			//console.log('on:'+event.detail.topic,event.detail.data)
 			if (event.detail.type !== 'signed') {
@@ -241,7 +249,7 @@ class webpeerjs{
 		})
 		
 		
-		//Listen to peer discovery event
+		//listen to peer discovery event
 		this.#libp2p.addEventListener('peer:discovery', (evt) => {
 
 			//console.log('Discovered:', evt.detail.id.toString())
@@ -271,7 +279,7 @@ class webpeerjs{
 				this.#discoveredPeers.set(id.toString(), addrs)
 
 				//track if peers like from relay dial it there is a chance from other browser node
-				if(multiaddrs.toString().includes('p2p-circuit')|| multiaddrs.toString().includes('webtransport')){
+				if(multiaddrs.toString().includes('certhash')&& multiaddrs.toString().includes('webtransport')){
 					if(!this.#connections.has(id)){
 						let mddrs = []
 						for(const addr of addrs){
@@ -290,11 +298,33 @@ class webpeerjs{
 		})
 
 		
-		//Listen to peer disconnect event
-		this.#libp2p.addEventListener("peer:disconnect", (evt) => {
+		//listen to peer disconnect event
+		this.#libp2p.addEventListener("peer:disconnect",async (evt) => {
+			
 			const connection = evt.detail;
 			//console.log(`Disconnected from ${connection.toCID().toString()}`);
 			const id = evt.detail.string
+			
+			//track disconnect event
+			if(this.#trackDisconnect.has(id)){
+				let count = this.#trackDisconnect.get(id)
+				count++
+				this.#trackDisconnect.set(id,count)
+				//console.log(this.#trackDisconnect)
+				if(count>5){
+					if(this.#dbstoreData.has(id)){
+						await this.#dbstore.delete(new Key(id))
+						this.#dbstoreData.delete(id)
+					}
+					
+					if(!this.#webPeersId.includes(id) && !this.#dialedKnownBootstrap.has(id)){
+						return
+					}
+				}
+			}
+			else{
+				this.#trackDisconnect.set(id,0)
+			}
 			
 			//if this disconnected peer is web peer redial it
 			if(this.#connectedPeers.has(id)){
@@ -351,10 +381,12 @@ class webpeerjs{
 			this.#answer()
 		})
 		  
-		setTimeout(()=>{
+		//setTimeout(async()=>{
+		//},5000)
+		
 			//dial known peers from configuration
 			this.#dialKnownPeers()
-		  
+		
 			//watch connection every 30s if none dial known peers again from configuration
 			this.#watchConnection()		
 		
@@ -367,7 +399,9 @@ class webpeerjs{
 			//dial random discovered peers
 			//this.#dialdiscoveredpeers()
 		
-		},5000)
+		setInterval(()=>{
+			this.#dialQueueList()
+		},5e3)
 
 	}
 
@@ -408,17 +442,32 @@ class webpeerjs{
 	}
 
 	
-	//Dial multiaddr address
-	async #dialMultiaddress(mddrs){
+	//add multiaddr address to queue list
+	#dialMultiaddress(mddrs){
+		this.#dialQueue.push(mddrs)
+	}
+	
+	//dial multiaddr address in queue list
+	#dialQueueList(){
 		
-		//dial with webtransport
-		await this.#dialWebtransport(mddrs)
+		const mddrsToDial = 2
 		
-		//fallback dial with websocket if enabled
-		if(this.#isDialWebsocket){
-			await this.#dialWebsocket(mddrs)
+		for(let i = 0; i < mddrsToDial; i++){
+			const mddrs = this.#dialQueue.shift()
+			if(mddrs != undefined){
+
+				//dial with webtransport
+				this.#dialWebtransport(mddrs)
+				
+				//fallback dial with websocket if enabled
+				if(this.#isDialWebsocket){
+					this.#dialWebsocket(mddrs)
+				}
+				
+			}
 		}
 		
+
 	}
 	
 
@@ -530,11 +579,8 @@ class webpeerjs{
 			//currently need universal connectivity id for webpeer discovery and joinRoom version 1 to work
 			id = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]
 			const addrs = this.#dialedKnownBootstrap.get(id)
-			let peers = []
-			for(const peer of this.#libp2p.getPeers()){
-				peers.push(peer.toString())
-			}
-			if(!peers.includes(id)){
+
+			if(!this.#isConnected(id)){
 				if(this.#connections.has(id))
 				{
 					let mddrs = []
@@ -580,7 +626,7 @@ class webpeerjs{
 				if(besttime>bestlimit){
 					const addr = remote.toString()
 					const id = peer.toString()
-					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) && !this.#dbstoreData.get(id)){
+					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit')){
 						//await this.#dbstore.delete(new Key(id))
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
@@ -633,8 +679,9 @@ class webpeerjs{
 					continue
 				}
 				else{					
+					
 					let count = this.#dialedGoodPeers.get(id)
-					if (count < 10){
+					if (count < 5 || this.#dialedKnownBootstrap.has(id)){
 						const addr = this.#connections.get(id)
 						let mddrs = []
 						const mddr = multiaddr(addr)
@@ -662,7 +709,7 @@ class webpeerjs{
 			if(peers == 0){
 				this.#dialKnownPeers()
 			}
-		},30*1000)
+		},60*1000)
 	}
 	
 	
@@ -682,11 +729,11 @@ class webpeerjs{
 							if(peers == 0){
 								this.#dialKnownDNSonly()
 							}
-						},5000)
+						},15000)
 					}
-				},5000)
+				},15000)
 			}
-		},5000)
+		},15000)
 	}
 	
 	
@@ -893,7 +940,7 @@ class webpeerjs{
 			},
 			transports:[
 				webTransport(),		
-				webSockets(),
+				//webSockets(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 				}),
@@ -901,9 +948,15 @@ class webpeerjs{
 			connectionManager: {
 				maxConnections: config.CONFIG_MAX_CONNECTIONS,
 				minConnections: config.CONFIG_MIN_CONNECTIONS,
+				autoDialInterval:60e3,
+				autoDialConcurrency:5,
+				autoDialMaxQueueLength:5,
+				autoDialDiscoveredPeersDebounce:30e3,
 				maxParallelDials: 10,
 				dialTimeout: 10e3,
-				maxIncomingPendingConnections: 20
+				maxIncomingPendingConnections: 5,
+				maxDialQueueLength:10,
+				inboundConnectionThreshold:3
 			},
 			connectionEncryption: [noise()],
 			streamMuxers: [
