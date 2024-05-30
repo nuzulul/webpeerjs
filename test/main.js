@@ -82,11 +82,11 @@ void async function main() {
 	},5000)
 	
 	node.onConnect((id)=>{
-		//console.log(`Connected to ${id}`)
+		console.log(`Connected to ${id}`)
 	})
 	
 	node.onDisconnect((id)=>{
-		//console.log(`Disconnected from ${id}`);
+		console.log(`Disconnected from ${id}`);
 	})
 	
 }()

@@ -131,7 +131,7 @@ class webpeerjs{
 			this.#connections.set(id,addr)
 			
 			//announce via joinRoom version 1
-			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0] || this.#webPeersId.includes(connection.toString())){
+			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]){
 				setTimeout(()=>{
 					this.#announce()
 				},1000)
@@ -151,13 +151,17 @@ class webpeerjs{
 				const senderPeerId = event.detail.from.toString()
 				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
 					try{
-						//connect webpeer if disconnected
-						let peers = []
-						for(const peer of this.#libp2p.getPeers()){
-							peers.push(peer.toString())
+						
+						//if webpeer reset last seen
+						if(this.#webPeersId.includes(senderPeerId)){
+							const address = this.#connectedPeers.get(senderPeerId).addrs
+							const now = new Date().getTime()
+							const metadata = {addrs:address,last:now}
+							this.#connectedPeers.set(senderPeerId,metadata)
 						}
+						
 						//dial if peers not connected and belong to webpeer
-						if(!peers.includes(senderPeerId) && this.#webPeersId.includes(senderPeerId)){
+						if(!this.#isConnected(senderPeerId) && this.#webPeersId.includes(senderPeerId)){
 							if(this.#connections.has(senderPeerId)){
 								let mddrs = []
 								const addr = this.#connections.get(senderPeerId)
@@ -174,7 +178,17 @@ class webpeerjs{
 								}
 								this.#dialMultiaddress(mddrs)
 							}
+							else{
+								const addrs = this.#connectedPeers.get(senderPeerId).addrs
+								let mddrs = []
+								for(const addr of addrs){
+									const mddr = multiaddr(addr)
+									mddrs.push(mddr)
+								}
+								this.#dialMultiaddress(mddrs)
+							}
 						}
+						
 						//parse the message over pupsub peer discovery
 						const peer = PBPeer.decode(event.detail.data)
 						const msg = uint8ArrayToString(peer.addrs[0])
@@ -190,24 +204,28 @@ class webpeerjs{
 							if(room)this.#rooms[room].onMessage(message,id)
 							if(signal){
 								if(signal == 'announce'){
-									setTimeout(()=>{this.#answer()},1000)
+									setTimeout(()=>{this.#ping()},1000)
 									if(!this.#connectedPeers.has(id))this.#onConnectFn(id)
 									if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
-									this.#connectedPeers.set(id,address)
+									const now = new Date().getTime()
+									const metadata = {addrs:address,last:now}
+									this.#connectedPeers.set(id,metadata)
 									this.#connectedPeersArr.length = 0
 									for(const peer of this.#connectedPeers){
-										const item = {id:peer[0],address:peer[1]}
+										const item = {id:peer[0],address:peer[1].addr}
 										this.#connectedPeersArr.push(item)
 									}
 									
 								}
-								if(signal == 'answer'){
+								if(signal == 'ping'){
 									if(!this.#connectedPeers.has(id))this.#onConnectFn(id)
 									if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
-									this.#connectedPeers.set(id,address)
+									const now = new Date().getTime()
+									const metadata = {addrs:address,last:now}
+									this.#connectedPeers.set(id,metadata)
 									this.#connectedPeersArr.length = 0
 									for(const peer of this.#connectedPeers){	
-										const item = {id:peer[0],address:peer[1]}
+										const item = {id:peer[0],address:peer[1].addrs}
 										this.#connectedPeersArr.push(item)
 									}
 									
@@ -327,7 +345,14 @@ class webpeerjs{
 			}
 			
 			//if this disconnected peer is web peer redial it
-			if(this.#connectedPeers.has(id)){
+			if(this.#webPeersId.includes(id)){
+				const addr = this.#connections.get(id)
+				let mddrs = []
+				const mddr = multiaddr(addr)
+				mddrs.push(mddr)
+				this.#dialMultiaddress(mddrs)
+			}
+			/*if(this.#connectedPeers.has(id)){
 				const address = this.#connectedPeers.get(id)
 				this.#connectedPeers.delete(id)
 				this.#connectedPeersArr.length = 0
@@ -342,7 +367,7 @@ class webpeerjs{
 				}
 				this.#dialMultiaddress(mddrs)
 				this.#onDisconnectFn(id)
-			}
+			}*/
 			
 			//if this disconnected peer is known bootstrap redial it
 			else if(this.#dialedKnownBootstrap.has(id)){
@@ -378,7 +403,7 @@ class webpeerjs{
 			})
 			this.#ListenAddressChange(mddrs)
 			this.address = mddrs
-			this.#answer()
+			this.#ping()
 		})
 		
 		//dial known peers from configuration
@@ -398,6 +423,10 @@ class webpeerjs{
 		
 		setInterval(()=>{
 			this.#dialQueueList()
+		},5e3)
+		
+		setInterval(()=>{
+			this.#trackLastSeen()
 		},5e3)
 
 	}
@@ -425,6 +454,29 @@ class webpeerjs{
 	PRIVATE FUNCTION
 	*/
 	
+	//check the last seen in web peer
+	#trackLastSeen(){
+		const timeout = 25*1000
+		const now = new Date().getTime()
+		
+		//if webpeer last seen grather then timeout send onDisconnect
+		for(const peer of this.#connectedPeers){
+			const id = peer[0]
+			const last = peer[1].last
+			const time = now-last
+			if(time>timeout){
+				this.#connectedPeers.delete(id)
+				this.#connectedPeersArr.length = 0
+				for(const peer of this.#connectedPeers){	
+					const item = {id:peer[0],address:peer[1].addrs}
+					this.#connectedPeersArr.push(item)
+				}
+				this.#onDisconnectFn(id)
+			}
+		}
+	}
+	
+	//check if this id is connected
 	#isConnected(id){
 			let peers = []
 			for(const peer of this.#libp2p.getPeers()){
@@ -462,13 +514,13 @@ class webpeerjs{
 		
 		for(let i = 0; i < mddrsToDial; i++){
 			const mddrs = this.#dialQueue.shift()
-			if(mddrs != undefined){
+			if(mddrs != undefined && mddrs.length>0){
 				//console.log('mddrs',mddrs)
 				const id = mddrs[0].toString().split('/').pop()
 				//console.log(id,mddrs.toString())
 				dial.push(id)
 				if(this.#isConnected(id))continue
-				if(queue.includes(id)){console.log('queue',id);continue;}
+				if(queue.includes(id)){continue;}
 
 				//dial with webtransport
 				this.#dialWebtransport(mddrs)
@@ -489,7 +541,7 @@ class webpeerjs{
 	}
 	
 
-	//announce and answer via joinRoom version 1
+	//announce and ping via joinRoom version 1
 	async #announce(){
 			const topic = config.CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address})
@@ -500,9 +552,9 @@ class webpeerjs{
 			const encodedPeer = PBPeer.encode(peer)
 			await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
 	}
-	async #answer(){
+	async #ping(){
 			const topic = config.CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY
-			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'answer',id:this.#libp2p.peerId.toString(),address:this.address})
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
 			  addrs: [uint8ArrayFromString(data)],
@@ -971,10 +1023,11 @@ class webpeerjs{
 				maxConnections: config.CONFIG_MAX_CONNECTIONS,
 				minConnections: config.CONFIG_MIN_CONNECTIONS,
 				autoDialInterval:60e3,
-				autoDialConcurrency:5,
-				autoDialMaxQueueLength:5,
+				autoDialConcurrency:0,
+				autoDialMaxQueueLength:0,
+				autoDialPriority:1000,
 				autoDialDiscoveredPeersDebounce:30e3,
-				maxParallelDials: 10,
+				maxParallelDials: 5,
 				dialTimeout: 10e3,
 				maxIncomingPendingConnections: 5,
 				maxDialQueueLength:10,
