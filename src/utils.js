@@ -7,3 +7,13 @@ const prefix = config.CONFIG_PREFIX
 export const mkErr = msg => new Error(`${prefix}: ${msg}`)
 
 export {PBPeer}
+
+export function uint8ArrayToString(uint8Array){
+	const string = new TextDecoder().decode(uint8Array)
+	return string
+}
+
+export function uint8ArrayFromString(string){
+	const uint8Array = new TextEncoder().encode(string)
+	return uint8Array
+}

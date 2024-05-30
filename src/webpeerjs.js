@@ -1,13 +1,10 @@
+import * as config from  './config'
+import { mkErr,PBPeer,uint8ArrayToString,uint8ArrayFromString } from './utils'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
-import { createHelia } from 'helia'
-import { unixfs } from '@helia/unixfs'
 import { createLibp2p } from 'libp2p'
-import { IDBBlockstore } from 'blockstore-idb'
 import { IDBDatastore } from 'datastore-idb'
 import { Key } from 'interface-datastore'
 import { webTransport } from '@libp2p/webtransport'
-import { webSockets } from '@libp2p/websockets'
-import * as config from  './config'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
@@ -18,19 +15,12 @@ import { multiaddr } from '@multiformats/multiaddr'
 import first from 'it-first'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
-import { mkErr,PBPeer } from './utils'
 import { sha256 } from 'multiformats/hashes/sha2'
-import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
-import { bootstrap } from '@libp2p/bootstrap'
 
 class webpeerjs{
 	
 	//libp2p instance
 	#libp2p
-	
-	//libp2p instance
-	#helia
 	
 	//map [id,addrs] of discovered peers (addrs is array of address)
 	#discoveredPeers
@@ -81,10 +71,9 @@ class webpeerjs{
 	address
 	peers
 	
-	constructor(helia,dbstore){
+	constructor(libp2p,dbstore){
 		
-		this.#libp2p = helia.libp2p
-		this.#helia = helia
+		this.#libp2p = libp2p
 		this.#dbstore = dbstore
 		this.#dbstoreData = new Map()
 		this.#discoveredPeers = new Map()
@@ -110,10 +99,10 @@ class webpeerjs{
 			return libp2p.status
 		})(this.#libp2p);
 
-		this.IPFS = (function(helia,libp2p,discoveredPeers) {
-			const obj = {helia,libp2p,discoveredPeers}
+		this.IPFS = (function(libp2p,discoveredPeers) {
+			const obj = {libp2p,discoveredPeers}
 			return obj
-		})(this.#helia,this.#libp2p,this.#discoveredPeers);
+		})(this.#libp2p,this.#discoveredPeers);
 		
 		this.id = this.#libp2p.peerId.toString()
 		
@@ -980,13 +969,6 @@ class webpeerjs{
 	//Entry point to webpeerjs
 	static async createWebpeer(){
 		
-		const blockstore = new IDBBlockstore(config.CONFIG_BLOCKSTORE_PATH)
-		//await blockstore.destroy()
-		await blockstore.open()
-		const datastore = new IDBDatastore(config.CONFIG_DATASTORE_PATH)
-		//await datastore.destroy()
-		await datastore.open()
-		
 		const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
 		await dbstore.open()
 		
@@ -1007,14 +989,12 @@ class webpeerjs{
 		
 		//Create libp2p instance
 		const libp2p = await createLibp2p({
-			//datastore,
 			addresses: {
 				listen: [
 				],
 			},
 			transports:[
 				webTransport(),		
-				//webSockets(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 				}),
@@ -1083,7 +1063,7 @@ class webpeerjs{
 					peerInfoMapper: removePrivateAddressesMapper,
 					clientMode: false
 				}),
-				//dht: kadDHT({})
+
 			},
 			peerStore: {
 				persistence: true,
@@ -1095,19 +1075,12 @@ class webpeerjs{
 		
 		//console.log(`Node started with id ${libp2p.peerId.toString()}`)
 
-		
-		//Create helia ipfs instance
-		const helia = await createHelia({
-			datastore,
-			blockstore,
-			libp2p
-		})
-		
-		await helia.libp2p.services.aminoDHT.setMode("server")
+		//DHT server mode act as bootstrap peer in IPFS network
+		await libp2p.services.aminoDHT.setMode("server")
 		
 		
 		//Return webpeerjs class
-		return new webpeerjs(helia,dbstore)
+		return new webpeerjs(libp2p,dbstore)
 	}
 }
 
