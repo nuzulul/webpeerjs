@@ -286,7 +286,7 @@ class webpeerjs{
 							const mddr = multiaddr(addr)
 							mddrs.push(mddr)
 						}
-						this.#dialMultiaddress(mddrs)
+						//this.#dialMultiaddress(mddrs)
 					}
 				}
 			}
@@ -380,24 +380,21 @@ class webpeerjs{
 			this.address = mddrs
 			this.#answer()
 		})
-		  
-		//setTimeout(async()=>{
-		//},5000)
 		
-			//dial known peers from configuration
-			this.#dialKnownPeers()
+		//dial known peers from configuration
+		this.#dialKnownPeers()
+	
+		//watch connection every 30s if none dial known peers again from configuration
+		this.#watchConnection()		
+	
+		//if found good peers save to storage and reconnect if disconnect
+		this.#connectionTracker()
 		
-			//watch connection every 30s if none dial known peers again from configuration
-			this.#watchConnection()		
+		//periodically dial saved bootstrap address if disconnect
+		this.#dialRandomBootstrap()
 		
-			//if found good peers save to storage and reconnect if disconnect
-			this.#connectionTracker()
-			
-			//periodically dial saved bootstrap address if disconnect
-			this.#dialRandomBootstrap()
-			
-			//dial random discovered peers
-			//this.#dialdiscoveredpeers()
+		//dial random discovered peers
+		//this.#dialdiscoveredpeers()
 		
 		setInterval(()=>{
 			this.#dialQueueList()
@@ -450,11 +447,28 @@ class webpeerjs{
 	//dial multiaddr address in queue list
 	#dialQueueList(){
 		
-		const mddrsToDial = 2
+		const mddrsToDial = 3
+		
+		let queue = []
+		for(const item of this.#libp2p.getDialQueue()){
+			const id = item.peerId.string
+			queue.push(id)
+		}
+		//console.log('queue',queue)
+		
+		if (queue.length > mddrsToDial)return
+		
+		let dial = []
 		
 		for(let i = 0; i < mddrsToDial; i++){
 			const mddrs = this.#dialQueue.shift()
 			if(mddrs != undefined){
+				//console.log('mddrs',mddrs)
+				const id = mddrs[0].toString().split('/').pop()
+				//console.log(id,mddrs.toString())
+				dial.push(id)
+				if(this.#isConnected(id))continue
+				if(queue.includes(id)){console.log('queue',id);continue;}
 
 				//dial with webtransport
 				this.#dialWebtransport(mddrs)
@@ -465,7 +479,11 @@ class webpeerjs{
 				}
 				
 			}
+			else{
+				break
+			}
 		}
+		//console.log('dial',dial)
 		
 
 	}
@@ -576,8 +594,10 @@ class webpeerjs{
 			const keys = Array.from(this.#dialedKnownBootstrap.keys())
 			const randomKey = Math.floor(Math.random() * keys.length)
 			let id = keys[randomKey]
-			//currently need universal connectivity id for webpeer discovery and joinRoom version 1 to work
-			id = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]
+			
+			//universal connectivity id for webpeer discovery and joinRoom version 1 to work
+			//id = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]
+			
 			const addrs = this.#dialedKnownBootstrap.get(id)
 
 			if(!this.#isConnected(id)){
@@ -599,7 +619,7 @@ class webpeerjs{
 					this.#dialMultiaddress(mddrs)
 				}
 			}
-		},30*1000)
+		},45*1000)
 	}
 	
 	
@@ -654,6 +674,7 @@ class webpeerjs{
 				const id = peer[0]
 				const addr = peer[1]
 				if(peers.includes(id)){
+					this.#connectionTrackerStore.set(id,0)
 					continue
 				}else{
 					if(this.#connectionTrackerStore.has(id)){
@@ -676,12 +697,13 @@ class webpeerjs{
 			const goods = Array.from(this.#dialedGoodPeers.keys())
 			for(const id of goods){
 				if(peers.includes(id)){
+					this.#dialedGoodPeers.set(id,0)
 					continue
 				}
 				else{					
 					
 					let count = this.#dialedGoodPeers.get(id)
-					if (count < 5 || this.#dialedKnownBootstrap.has(id)){
+					if (count < 15 || (count < 25 && this.#dialedKnownBootstrap.has(id))){
 						const addr = this.#connections.get(id)
 						let mddrs = []
 						const mddr = multiaddr(addr)
@@ -1028,7 +1050,7 @@ class webpeerjs{
 			libp2p
 		})
 		
-		//await helia.libp2p.services.aminoDHT.setMode("server")
+		await helia.libp2p.services.aminoDHT.setMode("server")
 		
 		
 		//Return webpeerjs class

@@ -9,6 +9,8 @@ const multiaddressEl = document.getElementById('multiaddress')
 const listenAddressCountEl = document.getElementById('listenAddressCount')
 const connectedWebPeerCountEl = document.getElementById('connectedWebPeerCount')
 const connectedWebPeersListEl = document.getElementById('connectedWebPeersList')
+const logEl = document.getElementById('log')
+const logCountEl = document.getElementById('logCount')
 
 void async function main() {
 
@@ -63,9 +65,16 @@ void async function main() {
 		  }
 	}
 	
+	let count = 0
 	const [sendMessage,listenMessage] = node.joinRoom('universal-connectivity-browser-peer-discovery')
 	listenMessage((msg,id)=>{
-		console.log(msg,id)
+		//console.log(msg,id)
+		const log = document.createElement('li')
+		log.innerText = id+' : '+msg
+		logEl.appendChild(log)
+		
+		count++
+		logCountEl.innerHTML = count
 	})
 	
 	setInterval(()=>{
