@@ -1,6 +1,12 @@
 import * as config from  './config'
 
-import { Peer as PBPeer } from '../node_modules/@libp2p/pubsub-peer-discovery/dist/src/peer.js'
+import { Peer as PBPeer } from '#/pubsub-peer-discovery/peer.js'
+
+import { Key } from 'interface-datastore'
+
+import { sha256 } from 'multiformats/hashes/sha2'
+
+
 
 const prefix = config.CONFIG_PREFIX
 
@@ -25,4 +31,14 @@ export function first(farr){
 			break
 		}
 	});	
+}
+
+export {Key}
+
+//Add id to pupsub message
+export async function msgIdFnStrictNoSign(msg){
+  var enc = new TextEncoder()
+  const signedMessage = msg
+  const encodedSeqNum = enc.encode(signedMessage.sequenceNumber.toString())
+  return await sha256.encode(encodedSeqNum)
 }

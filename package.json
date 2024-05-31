@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Simple peer-to-peer with IPFS",
   "main": "index.js",
+  "imports": {
+    "#/pubsub-peer-discovery/*.js": "./node_modules/@libp2p/pubsub-peer-discovery/dist/src/*.js"
+  },
   "directories": {
     "test": "test"
   },
@@ -31,7 +34,6 @@
     "@chainsafe/libp2p-noise": "^15.0.0",
     "@chainsafe/libp2p-yamux": "^6.0.2",
     "@helia/delegated-routing-v1-http-api-client": "^3.0.1",
-    "@libp2p/bootstrap": "^10.0.24",
     "@libp2p/circuit-relay-v2": "^1.0.24",
     "@libp2p/identify": "^2.0.2",
     "@libp2p/kad-dht": "^12.0.17",
@@ -40,7 +42,6 @@
     "@libp2p/webtransport": "^4.0.32",
     "@multiformats/multiaddr": "^12.2.3",
     "datastore-idb": "^2.1.9",
-    "interface-datastore": "^8.2.11",
     "libp2p": "^1.6.0"
   },
   "devDependencies": {

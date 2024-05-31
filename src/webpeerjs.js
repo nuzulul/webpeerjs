@@ -1,9 +1,8 @@
 import * as config from  './config'
-import { mkErr,PBPeer,uint8ArrayToString,uint8ArrayFromString,first } from './utils'
+import { mkErr,PBPeer,uint8ArrayToString,uint8ArrayFromString,first,Key,msgIdFnStrictNoSign } from './utils'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
-import { Key } from 'interface-datastore'
 import { webTransport } from '@libp2p/webtransport'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -14,7 +13,7 @@ import { identify, identifyPush } from '@libp2p/identify'
 import { multiaddr } from '@multiformats/multiaddr'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
-import { sha256 } from 'multiformats/hashes/sha2'
+
 
 class webpeerjs{
 	
@@ -376,13 +375,13 @@ class webpeerjs{
 		this.#dialKnownPeers()
 	
 		//watch connection every 30s if none dial known peers again from configuration
-		this.#watchConnection()		
+		//this.#watchConnection()		
 	
 		//if found good peers save to storage and reconnect if disconnect
-		this.#connectionTracker()
+		//this.#connectionTracker()
 		
 		//periodically dial saved bootstrap address if disconnect
-		this.#dialRandomBootstrap()
+		//this.#dialRandomBootstrap()
 		
 		//dial random discovered peers
 		//this.#dialdiscoveredpeers()
@@ -599,7 +598,8 @@ class webpeerjs{
 	//Dial random known bootstrap periodically
 	#dialRandomBootstrap(){
 		setInterval(()=>{
-			const keys = Array.from(this.#dialedKnownBootstrap.keys())
+			//const keys = Array.from(this.#dialedKnownBootstrap.keys())
+			const keys = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS
 			const randomKey = Math.floor(Math.random() * keys.length)
 			let ids = []
 			ids.push(keys[randomKey])
@@ -608,6 +608,7 @@ class webpeerjs{
 			ids.push(config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0])
 			
 			for(const id of ids){
+				if(id == undefined)continue
 				const addrs = this.#dialedKnownBootstrap.get(id)
 
 				if(!this.#isConnected(id)){
@@ -624,6 +625,18 @@ class webpeerjs{
 						const addrs = this.#dialedKnownBootstrap.get(id)
 						for(const addr of addrs){
 							const mddr = multiaddr(addr)
+							mddrs.push(mddr)
+						}
+						this.#dialMultiaddress(mddrs)
+					}
+					else{
+						const bootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
+						const index = bootstrap.findIndex((peer)=>peer.Peers[0].ID == id)
+						const addrs = bootstrap[index].Peers[0].Addrs
+						let mddrs = []
+						for(const addr of addrs){
+							const peeraddr = addr+'/p2p/'+id
+							const mddr = multiaddr(peeraddr)
 							mddrs.push(mddr)
 						}
 						this.#dialMultiaddress(mddrs)
@@ -1052,15 +1065,6 @@ class webpeerjs{
 		//Return webpeerjs class
 		return new webpeerjs(libp2p,dbstore)
 	}
-}
-
-
-//Add id to pupsub message
-async function msgIdFnStrictNoSign(msg){
-  var enc = new TextEncoder()
-  const signedMessage = msg
-  const encodedSeqNum = enc.encode(signedMessage.sequenceNumber.toString())
-  return await sha256.encode(encodedSeqNum)
 }
 
 
