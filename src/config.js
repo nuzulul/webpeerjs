@@ -3,7 +3,7 @@ export const CONFIG_PREFIX = prefix
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
 export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
-export const CONFIG_MAX_CONNECTIONS = 50
+export const CONFIG_MAX_CONNECTIONS = 100
 export const CONFIG_MIN_CONNECTIONS = 0
 export const CONFIG_DISCOVER_RELAYS = 2
 export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectivity-browser-peer-discovery'
@@ -252,7 +252,7 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 			}
 		]
 	},	
-
+	
 ]
 
 export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
