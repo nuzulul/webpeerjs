@@ -17,3 +17,12 @@ export function uint8ArrayFromString(string){
 	const uint8Array = new TextEncoder().encode(string)
 	return uint8Array
 }
+
+export function first(farr){
+	return new Promise(async function(myResolve, myReject) {
+		for await(const data of farr){
+			myResolve(data)
+			break
+		}
+	});	
+}
