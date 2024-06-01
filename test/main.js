@@ -66,7 +66,28 @@ void async function main() {
 	}
 	
 	let count = 0
-	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom('myroom')
+
+	var getParams = function (url) {
+		var params = {};
+		var parser = document.createElement('a');
+		parser.href = url;
+		var query = parser.search.substring(1);
+		var vars = query.split('&');
+		for (var i = 0; i < vars.length; i++) {
+		  var pair = vars[i].split('=');
+		  params[pair[0]] = decodeURIComponent(pair[1]);
+		}
+		return params;
+	};
+	var params = getParams(window.location.href);
+	
+	let room = 'myroom'
+	
+	if (params.room != undefined){
+		room = params.room
+	}
+
+	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom(room)
 	listenMessage((msg,id)=>{
 		//console.log(msg,id)
 		const log = document.createElement('li')
@@ -81,8 +102,11 @@ void async function main() {
 		console.log('members',members)
 	})
 	
+	let number = 0
+	
 	setInterval(()=>{
-		sendMessage(node.id)
+		sendMessage(number)
+		number++
 	},5000)
 	
 	node.onJoin((id)=>{
