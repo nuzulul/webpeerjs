@@ -66,7 +66,7 @@ void async function main() {
 	}
 	
 	let count = 0
-	const [sendMessage,listenMessage] = node.joinRoom('universal-connectivity-browser-peer-discovery')
+	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom('universal-connectivity-browser-peer-discovery')
 	listenMessage((msg,id)=>{
 		//console.log(msg,id)
 		const log = document.createElement('li')
@@ -77,15 +77,19 @@ void async function main() {
 		logCountEl.innerHTML = count
 	})
 	
+	onMembersChange((members)=>{
+		console.log('members',members)
+	})
+	
 	setInterval(()=>{
 		sendMessage(node.id)
 	},5000)
 	
-	node.onConnect((id)=>{
+	node.onJoin((id)=>{
 		console.log(`Connected to ${id}`)
 	})
 	
-	node.onDisconnect((id)=>{
+	node.onLeave((id)=>{
 		console.log(`Disconnected from ${id}`);
 	})
 	

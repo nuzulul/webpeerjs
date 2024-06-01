@@ -23,10 +23,10 @@ class webpeerjs{
 	//map [id,addrs] of discovered peers (addrs is array of address)
 	#discoveredPeers
 	
-	//array of web peers id has found
+	//array of all webpeers id has been found
 	#webPeersId
 	
-	//database of best peer found saved here
+	//database of best peers has been found
 	#dbstore
 	#dbstoreData
 	
@@ -36,25 +36,25 @@ class webpeerjs{
 	//boolean is dial websocket
 	#isDialWebsocket
 	
-	//map [id,mddrs]
+	//map [id,mddrs] of dialed bootstrap address
 	#dialedKnownBootstrap
 	
 	//array of dialed discovered peers id
 	#dialedDiscoveredPeers
 	
-	//object of joinRoom()
+	//object from joinRoom()
 	#rooms
 	
-	//wap [id,addrs] of web peers (addrs is array of address)
+	//map [id,addrs] of webpeers currently  connected  (addrs is array of address)
 	#connectedPeers
 	
-	//array of web peers id
+	//array of we peers id proxy of #connectedPeers
 	#connectedPeersArr
 	
-	//map [id,number_of_dialed] of #connectionTracker
+	//map [id,number_of_dialed] of #connectionTracker object store
 	#connectionTrackerStore
 	
-	//map [id,addr] of all connections (addr is string of address)
+	//map [id,addr] of all peers connections (addr is string of address)
 	#connections
 	
 	//track disconnect event
@@ -107,6 +107,7 @@ class webpeerjs{
 		
 		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect", (evt) => {
+			
 			//console.log(`Connected to ${connection.toString()}`);
 			
 			const connection = evt.detail;
@@ -127,8 +128,9 @@ class webpeerjs{
 		});
 
 
-		//subscribe to pupsub topic
+		//listen message from subscribed pupsub topic
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
+			
 			//console.log('on:'+event.detail.topic,event.detail.data)
 			if (event.detail.type !== 'signed') {
 			  return
@@ -139,7 +141,7 @@ class webpeerjs{
 				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
 					try{
 						
-						//if webpeer reset last seen
+						//if it is webpeer reset this last seen
 						if(this.#webPeersId.includes(senderPeerId)){
 							const address = this.#connectedPeers.get(senderPeerId).addrs
 							const now = new Date().getTime()
@@ -147,7 +149,7 @@ class webpeerjs{
 							this.#connectedPeers.set(senderPeerId,metadata)
 						}
 						
-						//dial if peers not connected and belong to webpeer
+						//dial if peers not connected and belong to webpeers
 						if(!this.#isConnected(senderPeerId) && this.#webPeersId.includes(senderPeerId)){
 							if(this.#connections.has(senderPeerId)){
 								let mddrs = []
@@ -188,7 +190,13 @@ class webpeerjs{
 						if(id != senderPeerId)return
 						const address = json.address
 						if(prefix === config.CONFIG_PREFIX){
-							if(room)this.#rooms[room].onMessage(message,id)
+							if(room){
+								this.#rooms[room].onMessage(message,id)
+								if(!this.#rooms[room].members.includes(id)){
+									this.#rooms[room].members.push(id)
+									this.#rooms[room].onMembers(this.#rooms[room].members)
+								}
+							}
 							if(signal){
 								if(signal == 'announce'){
 									setTimeout(()=>{this.#ping()},1000)
@@ -238,7 +246,7 @@ class webpeerjs{
 			//console.log('Discovered:', evt.detail.id.toString())
 			//console.log('Discovered: '+evt.detail.id.toString(), evt.detail.multiaddrs.toString())
 			
-			//Save peer discover
+			//save peer discover
 			
 			const multiaddrs = evt.detail.multiaddrs
 			const id = evt.detail.id
@@ -249,11 +257,11 @@ class webpeerjs{
 					let peeraddr
 					if(multiaddrs.toString().includes(evt.detail.id.toString())){
 						//console.log('Discovered:', evt.detail.multiaddrs.toString())
-						//Peer from pupsub peer discovery already has included self id
+						//peer from pupsub peer discovery already has included self id
 						peeraddr = addr.toString()
 					}
 					else{
-						//other need to add id
+						//other need to add Id
 						peeraddr = addr.toString()+'/p2p/'+id
 					}
 					addrs.push(peeraddr)
@@ -261,7 +269,7 @@ class webpeerjs{
 				//save the new format multiaddrs
 				this.#discoveredPeers.set(id.toString(), addrs)
 
-				//track if peers like from relay dial it there is a chance from other browser node
+				//track if peer come from relay then dial it because there is a chance it is from other browser node
 				if(multiaddrs.toString().includes('certhash')&& multiaddrs.toString().includes('webtransport')){
 					if(!this.#connections.has(id)){
 						let mddrs = []
@@ -296,7 +304,7 @@ class webpeerjs{
 				//console.log(this.#trackDisconnect)
 				if(count>5){
 					if(this.#dbstoreData.has(id)){
-						await this.#dbstore.delete(new Key(id))
+						//await this.#dbstore.delete(new Key(id))
 						this.#dbstoreData.delete(id)
 					}
 					
@@ -317,22 +325,6 @@ class webpeerjs{
 				mddrs.push(mddr)
 				this.#dialMultiaddress(mddrs)
 			}
-			/*if(this.#connectedPeers.has(id)){
-				const address = this.#connectedPeers.get(id)
-				this.#connectedPeers.delete(id)
-				this.#connectedPeersArr.length = 0
-				for(const peer of this.#connectedPeers){	
-					const item = {id:peer[0],address:peer[1]}
-					this.#connectedPeersArr.push(item)
-				}
-				let mddrs = []
-				for (const addr of address){
-					const m = multiaddr(addr)
-					mddrs.push(m)
-				}
-				this.#dialMultiaddress(mddrs)
-				this.#onDisconnectFn(id)
-			}*/
 			
 			//if this disconnected peer is known bootstrap redial it
 			else if(this.#dialedKnownBootstrap.has(id)){
@@ -354,7 +346,7 @@ class webpeerjs{
 		});
 		
 		
-		//Listen to self peer update
+		//listen to self peer update
 		this.#libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
 			const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 			//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
@@ -375,13 +367,13 @@ class webpeerjs{
 		this.#dialKnownPeers()
 	
 		//watch connection every 30s if none dial known peers again from configuration
-		//this.#watchConnection()		
+		this.#watchConnection()		
 	
 		//if found good peers save to storage and reconnect if disconnect
-		//this.#connectionTracker()
+		this.#connectionTracker()
 		
 		//periodically dial saved bootstrap address if disconnect
-		//this.#dialRandomBootstrap()
+		this.#dialRandomBootstrap()
 		
 		//dial random discovered peers
 		//this.#dialdiscoveredpeers()
@@ -405,12 +397,12 @@ class webpeerjs{
 
 	//Listen on new peer connection
 	#onConnectFn = () => {}
-	onConnect = f => (this.#onConnectFn = f)
+	onJoin = f => (this.#onConnectFn = f)
 
 
 	//Listen on peer disconnect
 	#onDisconnectFn = () => {}
-	onDisconnect = f => (this.#onDisconnectFn = f)	
+	onLeave = f => (this.#onDisconnectFn = f)	
 
 
 
@@ -437,6 +429,16 @@ class webpeerjs{
 					this.#connectedPeersArr.push(item)
 				}
 				this.#onDisconnectFn(id)
+				
+				//remove id from room member
+				const rooms = Object.keys(this.#rooms)
+				for(const room of rooms){
+					if(this.#rooms[room].members.includes(id)){
+						const index = this.#rooms[room].members.indexOf(id)
+						this.#rooms[room].members.splice(index,1)
+						this.#rooms[room].onMembers(this.#rooms[room].members)
+					}
+				}
 			}
 		}
 	}
@@ -458,7 +460,18 @@ class webpeerjs{
 	
 	//add multiaddr address to queue list
 	#dialMultiaddress(mddrs){
-		this.#dialQueue.push(mddrs)
+		if(mddrs.length>0){
+			
+			const id = mddrs[0].toString().split('/').pop()
+			
+			if(this.#webPeersId.includes(id) || id == config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0] ){
+				this.#dialQueue.unshift(mddrs)
+			}
+			else{
+				this.#dialQueue.push(mddrs)
+			}
+			
+		}
 	}
 	
 	//dial multiaddr address in queue list
@@ -471,19 +484,15 @@ class webpeerjs{
 			const id = item.peerId.string
 			queue.push(id)
 		}
-		//console.log('queue',queue)
 		
 		if (queue.length > mddrsToDial)return
-		
-		let dial = []
 		
 		for(let i = 0; i < mddrsToDial; i++){
 			const mddrs = this.#dialQueue.shift()
 			if(mddrs != undefined && mddrs.length>0){
-				//console.log('mddrs',mddrs)
+				
 				const id = mddrs[0].toString().split('/').pop()
-				//console.log(id,mddrs.toString())
-				dial.push(id)
+				
 				if(this.#isConnected(id))continue
 				if(queue.includes(id)){continue;}
 
@@ -500,8 +509,6 @@ class webpeerjs{
 				break
 			}
 		}
-		//console.log('dial',dial)
-		
 
 	}
 	
@@ -537,7 +544,8 @@ class webpeerjs{
 		if (this.#rooms[room]) {
 			return [
 				this.#rooms[room].sendMessage,
-				this.#rooms[room].listenMessage
+				this.#rooms[room].listenMessage,
+				this.#rooms[room].onMembersChange
 			]
 			
 			if (!room) {
@@ -545,7 +553,7 @@ class webpeerjs{
 			}
 		}
 		
-		//Join room version 1 user pupsub via pupsub peer discovery
+		//join room version 1 user pupsub via pupsub peer discovery
 		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 
 			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
@@ -563,18 +571,22 @@ class webpeerjs{
 					for(const topic of topics){
 						await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
 					}
-				}
+				},
+				members : [this.id],
+				onMembers : () => {},
+				onMembersChange : f => {this.#rooms[room] = {...this.#rooms[room], onMembers: f};this.#rooms[room].onMembers(this.#rooms[room].members)},
 			}
 		}
 		
 		return [
 			this.#rooms[room].sendMessage,
-			this.#rooms[room].listenMessage
+			this.#rooms[room].listenMessage,
+			this.#rooms[room].onMembersChange
 		]
 	}
 	
 	
-	//Dial discovered peers
+	//dial discovered peers
 	#dialdiscoveredpeers(){
 		setInterval(()=>{
 			const keys = Array.from(this.#discoveredPeers.keys())
@@ -595,7 +607,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial random known bootstrap periodically
+	//dial random known bootstrap periodically
 	#dialRandomBootstrap(){
 		setInterval(()=>{
 			//const keys = Array.from(this.#dialedKnownBootstrap.keys())
@@ -647,7 +659,7 @@ class webpeerjs{
 	}
 	
 	
-	//Track for good connection
+	//track for good connection
 	async #connectionTracker(){
 		
 		for await (const { key, value } of this.#dbstore.query({})) {
@@ -658,7 +670,7 @@ class webpeerjs{
 		
 		setInterval(async ()=>{
 			
-			//Save peer address if connection is good
+			//save peer address if connection is good
 			const connections = this.#libp2p.getConnections()
 			for(const connect of connections){
 				const peer = connect.remotePeer
@@ -717,7 +729,7 @@ class webpeerjs{
 				}
 			}
 			
-			//Connect to good peer address if it is disconnected
+			//connect to good peer address if it is disconnected
 			const goods = Array.from(this.#dialedGoodPeers.keys())
 			for(const id of goods){
 				if(peers.includes(id)){
@@ -743,7 +755,7 @@ class webpeerjs{
 	}
 
 	
-	//Update listen address on change
+	//update listen address on change
 	#ListenAddressChange = () => {}
 	#onSelfAddress = f => (this.#ListenAddressChange = f)
 	
@@ -759,7 +771,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial to all known bootstrap peers and DNS
+	//dial to all known bootstrap peers and DNS
 	#dialKnownPeers(){
 		this.#dialKnownBootstrap()
 		setTimeout(()=>{
@@ -783,7 +795,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial based on known bootsrap peers address
+	//dial based on known bootsrap peers address
 	#dialKnownBootstrap(){
 		const bootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
 		for(const peer of bootstrap){
@@ -807,7 +819,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial based on known peers ID
+	//dial based on known peers ID
 	async #dialKnownID(){
 		const api = config.CONFIG_DELEGATED_API
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
@@ -836,7 +848,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial based on known bootstrap DNS
+	//dial based on known bootstrap DNS
 	async #dialKnownDNS(){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const bootstrapdns = config.CONFIG_KNOWN_BOOTSTRAP_DNS
@@ -874,7 +886,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial based on known bootstrap DNS using DNS resolver only
+	//dial based on known bootstrap DNS using DNS resolver only
 	async #dialKnownDNSonly(){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const bootstrapdns = config.CONFIG_KNOWN_BOOTSTRAP_DNS
@@ -891,7 +903,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial DNS with webtransport and websocket
+	//dial DNS with webtransport and websocket
 	async #dialDNSWebsocketWebtransport(id,dnsaddr){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const response = await fetch(dnsresolver+'?name='+dnsaddr+'&type=txt')
@@ -919,7 +931,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial only webtransport multiaddrs
+	//dial only webtransport multiaddrs
 	async #dialWebtransport(multiaddrs){
 			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('webtransport')&&maddr.protoNames().includes('certhash'))
 			  for (const addr of webTransportMadrs) {
@@ -934,7 +946,7 @@ class webpeerjs{
 	}
 	
 	
-	//Dial only websocket multiaddrs
+	//dial only websocket multiaddrs
 	async #dialWebsocket(multiaddrs){
 			const webSocketMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('wss'))
 			  for (const addr of webSocketMadrs) {
@@ -949,7 +961,7 @@ class webpeerjs{
 	}
 	
 	
-	//Entry point to webpeerjs
+	//entry point to webpeerjs
 	static async createWebpeer(){
 		
 		const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
@@ -970,7 +982,7 @@ class webpeerjs{
 			}
 		}	
 		
-		//Create libp2p instance
+		//create libp2p instance
 		const libp2p = await createLibp2p({
 			addresses: {
 				listen: [
@@ -1031,7 +1043,7 @@ class webpeerjs{
 					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY,
 					listenOnly: false,
 				}),
-				//bootstrap({list: bootstrapAddrs,})
+				
 			],
 			services: {
 				pubsub: gossipsub({
@@ -1062,11 +1074,11 @@ class webpeerjs{
 		await libp2p.services.aminoDHT.setMode("server")
 		
 		
-		//Return webpeerjs class
+		//return webpeerjs class
 		return new webpeerjs(libp2p,dbstore)
 	}
 }
 
 
-//Export module
+//export module
 export default webpeerjs
