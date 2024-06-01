@@ -1,4 +1,4 @@
-import webpeerjs from './../src/webpeerjs'
+import {webpeerjs} from './../src/webpeerjs'
 
 const statusValueEl = document.getElementById('statusValue')
 const nodeIdEl = document.getElementById('nodeId')
@@ -66,7 +66,7 @@ void async function main() {
 	}
 	
 	let count = 0
-	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom('universal-connectivity-browser-peer-discovery')
+	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom('myroom')
 	listenMessage((msg,id)=>{
 		//console.log(msg,id)
 		const log = document.createElement('li')
