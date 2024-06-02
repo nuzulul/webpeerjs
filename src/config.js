@@ -3,7 +3,7 @@ export const CONFIG_PREFIX = prefix
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
 export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
-export const CONFIG_MAX_CONNECTIONS = 50
+export const CONFIG_MAX_CONNECTIONS = 100
 export const CONFIG_MIN_CONNECTIONS = 0
 export const CONFIG_DISCOVER_RELAYS = 2
 export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectivity-browser-peer-discovery'
@@ -252,7 +252,19 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS = [
 			}
 		]
 	},	
-	
+	{
+		"Peers": [
+			{
+				"Addrs": [
+					"/ip4/205.198.64.76/tcp/4001",
+					"/ip4/205.198.64.76/udp/4001/quic-v1",
+					"/ip4/205.198.64.76/udp/4001/quic-v1/webtransport/certhash/uEiCT4khDdgvF2NHCw-fu3qUk2qRqx0AgTEt0PHZct8jq5g/certhash/uEiA2RYkSCyOOtJmrpm_Dn8jJr-LLwS0S7K3HX3dbJJlN_w"
+				],
+				"ID": "12D3KooWBdF3g6vSJFRPoZQo7BNnkNzaWb59gpyaVzsgtNTVeu8H",
+				"Schema": "peer"
+			}
+		]
+	},	
 ]
 
 export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
@@ -270,4 +282,5 @@ export const CONFIG_KNOWN_BOOTSTRAP_PEER_IDS = [
 	'12D3KooWS79EhkPU7ESUwgG4vyHHzW9FDNZLoWVth9b5N5NSrvaj',
 	'12D3KooWBbkCD5MpJhMc1mfPAVGEyVkQnyxPKGS7AHwDqQM2JUsk',
 	'12D3KooWKLdecs31Zmo2pLBjR9HY2vWo3VwM4eBm21Czeucbe6FL',
+	'12D3KooWBdF3g6vSJFRPoZQo7BNnkNzaWb59gpyaVzsgtNTVeu8H'
 	]

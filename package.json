@@ -39,6 +39,7 @@
     "@libp2p/kad-dht": "^12.0.17",
     "@libp2p/peer-id": "^4.1.2",
     "@libp2p/pubsub-peer-discovery": "^10.0.2",
+    "@libp2p/simple-metrics": "^1.0.2",
     "@libp2p/webtransport": "^4.0.32",
     "@multiformats/multiaddr": "^12.2.3",
     "datastore-idb": "^2.1.9",

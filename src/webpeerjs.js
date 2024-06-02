@@ -1,5 +1,5 @@
 import * as config from  './config'
-import { mkErr,PBPeer,uint8ArrayToString,uint8ArrayFromString,first,Key,msgIdFnStrictNoSign } from './utils'
+import { mkErr,PBPeer,uint8ArrayToString,uint8ArrayFromString,first,Key,msgIdFnStrictNoSign,metrics } from './utils'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
@@ -13,6 +13,7 @@ import { identify, identifyPush } from '@libp2p/identify'
 import { multiaddr } from '@multiformats/multiaddr'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { simpleMetrics } from '@libp2p/simple-metrics'
 
 
 class webpeerjs{
@@ -66,13 +67,16 @@ class webpeerjs{
 	//list of dial multiaddress queue
 	#dialQueue
 	
+	//is dial enabled
+	#isDialEnabled
+	
 	id
 	status
 	IPFS
 	address
 	peers
 	
-	constructor(libp2p,dbstore){
+	constructor(libp2p,dbstore,onMetrics){
 		
 		this.#libp2p = libp2p
 		this.#dbstore = dbstore
@@ -92,6 +96,7 @@ class webpeerjs{
 		this.#connections = new Map()
 		this.#trackDisconnect = new Map()
 		this.#dialQueue = []
+		this.#isDialEnabled = true
 		
 		this.peers = (function(f) {
 			return f
@@ -411,6 +416,12 @@ class webpeerjs{
 		
 		//dial random discovered peers
 		//this.#dialdiscoveredpeers()
+
+		onMetrics((data)=>{
+			const signal = metrics(data)
+			this.#isDialEnabled = signal
+			
+		})
 		
 		setInterval(()=>{
 			this.#dialQueueList()
@@ -419,7 +430,7 @@ class webpeerjs{
 		setInterval(()=>{
 			this.#trackLastSeen()
 		},5e3)
-
+		
 	}
 
 
@@ -444,6 +455,7 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+	
 	
 	//check the last seen in web peer
 	#trackLastSeen(){
@@ -498,6 +510,13 @@ class webpeerjs{
 			
 			const id = mddrs[0].toString().split('/').pop()
 			
+			const ids = this.#dialQueue.map((arr)=> arr[0].toString().split('/').pop())
+			
+			//if peer id is already in the queque cancel queque
+			if(ids.includes(id)){
+				return
+			}
+			
 			if(this.#webPeersId.includes(id) || id == config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0] ){
 				this.#dialQueue.unshift(mddrs)
 			}
@@ -510,6 +529,8 @@ class webpeerjs{
 	
 	//dial multiaddr address in queue list
 	#dialQueueList(){
+		
+		if(!this.#isDialEnabled)return
 		
 		const mddrsToDial = 3
 		
@@ -811,15 +832,18 @@ class webpeerjs{
 		setTimeout(()=>{
 			const peers = this.#libp2p.getPeers().length
 			if(peers == 0){
-				this.#dialKnownID()
+				//currently not needed
+				//this.#dialKnownID()
 				setTimeout(()=>{
 					const peers = this.#libp2p.getPeers().length
 					if(peers == 0){
-						this.#dialKnownDNS()
+						//currently not needed
+						//this.#dialKnownDNS()
 						setTimeout(()=>{
 							const peers = this.#libp2p.getPeers().length
 							if(peers == 0){
-								this.#dialKnownDNSonly()
+								//currently not needed
+								//this.#dialKnownDNSonly()
 							}
 						},15000)
 					}
@@ -997,6 +1021,9 @@ class webpeerjs{
 	
 	//entry point to webpeerjs
 	static async createWebpeer(){
+
+		// all libp2p debug logs
+		localStorage.setItem('debug', 'libp2p:*')
 		
 		const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
 		await dbstore.open()
@@ -1014,7 +1041,10 @@ class webpeerjs{
 					bootstrapAddrs.push(addr+'/p2p/'+id)
 				}
 			}
-		}	
+		}
+
+		let onMetricsFn = () => {}
+		const onMetrics = f => (onMetricsFn = f)
 		
 		//create libp2p instance
 		const libp2p = await createLibp2p({
@@ -1026,6 +1056,8 @@ class webpeerjs{
 				webTransport(),		
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
+					reservationConcurrency: 1,
+					maxReservationQueueLength: 3
 				}),
 			],
 			connectionManager: {
@@ -1036,11 +1068,13 @@ class webpeerjs{
 				autoDialMaxQueueLength:0,
 				autoDialPriority:1000,
 				autoDialDiscoveredPeersDebounce:30e3,
-				maxParallelDials: 5,
-				dialTimeout: 10e3,
+				maxParallelDials: 3,
+				dialTimeout: 5e3,
 				maxIncomingPendingConnections: 5,
 				maxDialQueueLength:10,
-				inboundConnectionThreshold:3
+				inboundConnectionThreshold:3,
+				maxPeerAddrsToDial:2,
+				inboundUpgradeTimeout:5e3
 			},
 			connectionEncryption: [noise()],
 			streamMuxers: [
@@ -1097,7 +1131,11 @@ class webpeerjs{
 			peerStore: {
 				persistence: true,
 				threshold: 1
-			}
+			},
+			metrics: simpleMetrics({
+				onMetrics: (metrics) => {onMetricsFn(metrics)},
+				intervalMs: 1000
+			})
 		})
 		
 		
@@ -1109,7 +1147,7 @@ class webpeerjs{
 		
 		
 		//return webpeerjs class
-		return new webpeerjs(libp2p,dbstore)
+		return new webpeerjs(libp2p,dbstore,onMetrics)
 	}
 }
 
