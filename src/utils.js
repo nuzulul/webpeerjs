@@ -149,13 +149,19 @@ export function metrics(data){
 		}
 		
 		if ((fail-lastfailtreshold)>50){
-			isDialEnabled = false
-			console.log('isDialEnabled',isDialEnabled)
-			setTimeout(()=>{
-				isDialEnabled = true
-				lastfailtreshold = fail
-				console.log('isDialEnabled',isDialEnabled)
-			},6*60*1000)
+			if(isDialEnabled){
+				isDialEnabled = false
+				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+				console.warn(str)
+				setTimeout(()=>{
+					if(!isDialEnabled){
+						isDialEnabled = true
+						lastfailtreshold = fail
+						const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+						console.warn(str)
+					}
+				},6*60*1000)
+			}
 		}
 		
 		return isDialEnabled
@@ -163,3 +169,10 @@ export function metrics(data){
 	}
 	catch(e){}
 }
+
+/*
+onunhandledrejection = function(evt) {
+    console.warn(evt.reason);
+	return
+}
+*/

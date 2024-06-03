@@ -214,16 +214,29 @@ class webpeerjs{
 						const id = json.id
 						//console.log(`from ${id}:${signal} = ${message}`)
 						if(id != senderPeerId)return
-						const address = json.address
+						let address = json.address
 						
 						//detect special webpeer identity
 						if(prefix === config.CONFIG_PREFIX){
-							
-							//add to connected webpeers
-							if(!this.#connectedPeers.has(id))this.#onConnectFn(id)
-								
+
 							//add to webpeers id
 							if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+							
+							//add to connected webpeers
+							if(!this.#connectedPeers.has(id)){
+								this.#onConnectFn(id)
+								address = []
+								const now = new Date().getTime()
+								const metadata = {addrs:address,last:now}
+								this.#connectedPeers.set(id,metadata)
+								this.#webPeersAddrs.set(id,address)
+								this.#connectedPeersArr.length = 0
+								for(const peer of this.#connectedPeers){	
+									const item = {id:peer[0],address:peer[1].addrs}
+									this.#connectedPeersArr.push(item)
+								}
+							}
+
 							
 							if(room){
 								if(this.#rooms[room]){
