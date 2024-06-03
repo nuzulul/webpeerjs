@@ -1,6 +1,14 @@
 import * as config from  './config'
-import { mkErr,PBPeer,uint8ArrayToString,uint8ArrayFromString,first,Key,msgIdFnStrictNoSign,metrics } from './utils'
-import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
+import { 
+	mkErr,
+	PBPeer,
+	uint8ArrayToString,
+	uint8ArrayFromString,
+	//first,
+	Key,
+	msgIdFnStrictNoSign,
+	metrics } from './utils'
+//import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
 import { webTransport } from '@libp2p/webtransport'
@@ -11,7 +19,7 @@ import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { identify, identifyPush } from '@libp2p/identify'
 import { multiaddr } from '@multiformats/multiaddr'
-import { peerIdFromString } from '@libp2p/peer-id'
+//import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { simpleMetrics } from '@libp2p/simple-metrics'
 
@@ -44,7 +52,7 @@ class webpeerjs{
 	#dialedKnownBootstrap
 	
 	//array of dialed discovered peers id
-	#dialedDiscoveredPeers
+	//#dialedDiscoveredPeers
 	
 	//object from joinRoom()
 	#rooms
@@ -87,7 +95,7 @@ class webpeerjs{
 		this.#dialedGoodPeers = new Map()
 		this.#isDialWebsocket = false
 		this.#dialedKnownBootstrap = new Map()
-		this.#dialedDiscoveredPeers = []
+		//this.#dialedDiscoveredPeers = []
 		this.address = []
 		this.#rooms = {}
 		this.#connectedPeers = new Map()
@@ -279,6 +287,7 @@ class webpeerjs{
 
 					}catch(err){
 						//console.log('from '+event.detail.from.toString())
+						console.debug(err)
 					}
 				}else{
 					const json = JSON.parse(topic)
@@ -344,7 +353,7 @@ class webpeerjs{
 		//listen to peer disconnect event
 		this.#libp2p.addEventListener("peer:disconnect",async (evt) => {
 			
-			const connection = evt.detail;
+			//const connection = evt.detail;
 			//console.log(`Disconnected from ${connection.toCID().toString()}`);
 			const id = evt.detail.string
 			
@@ -400,7 +409,7 @@ class webpeerjs{
 		
 		//listen to self peer update
 		this.#libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
-			const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
+			//const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 			//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
 			const id = peer.id.toString()
 			const mddrs = []
@@ -410,7 +419,7 @@ class webpeerjs{
 					mddrs.push(maddr)
 				}
 			})
-			this.#ListenAddressChange(mddrs)
+			//this.#ListenAddressChange(mddrs)
 			this.address = mddrs
 			this.#ping()
 		})
@@ -616,9 +625,11 @@ class webpeerjs{
 				this.#rooms[room].onMembersChange
 			]
 			
-			if (!room) {
-				throw mkErr('room is required')
-			}
+
+		}
+
+		if (!room) {
+			throw mkErr('room is required')
 		}
 		
 		//join room version 1 user pupsub via pupsub peer discovery
@@ -655,7 +666,7 @@ class webpeerjs{
 	
 	
 	//dial discovered peers
-	#dialdiscoveredpeers(){
+	/*#dialdiscoveredpeers(){
 		setInterval(()=>{
 			const keys = Array.from(this.#discoveredPeers.keys())
 			for(const key of keys){
@@ -672,7 +683,7 @@ class webpeerjs{
 				}
 			}
 		},30*1000)
-	}
+	}*/
 	
 	
 	//dial random known bootstrap periodically
@@ -689,7 +700,7 @@ class webpeerjs{
 			
 			for(const id of ids){
 				if(id == undefined)continue
-				const addrs = this.#dialedKnownBootstrap.get(id)
+				//const addrs = this.#dialedKnownBootstrap.get(id)
 
 				if(!this.#isConnected(id)){
 					if(this.#connections.has(id))
@@ -824,8 +835,8 @@ class webpeerjs{
 
 	
 	//update listen address on change
-	#ListenAddressChange = () => {}
-	#onSelfAddress = f => (this.#ListenAddressChange = f)
+	//#ListenAddressChange = () => {}
+	//#onSelfAddress = f => (this.#ListenAddressChange = f)
 	
 	
 	//Periodically watch for connection
@@ -891,7 +902,7 @@ class webpeerjs{
 	
 	
 	//dial based on known peers ID
-	async #dialKnownID(){
+	/*async #dialKnownID(){
 		const api = config.CONFIG_DELEGATED_API
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS
@@ -916,11 +927,11 @@ class webpeerjs{
 				this.#dialMultiaddress(mddrs)
 			}
 		}
-	}
+	}*/
 	
 	
 	//dial based on known bootstrap DNS
-	async #dialKnownDNS(){
+	/*async #dialKnownDNS(){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const bootstrapdns = config.CONFIG_KNOWN_BOOTSTRAP_DNS
 		const response = await fetch(dnsresolver+'?name='+bootstrapdns+'&type=txt')
@@ -954,11 +965,11 @@ class webpeerjs{
 			}
 		}
 		
-	}
+	}*/
 	
 	
 	//dial based on known bootstrap DNS using DNS resolver only
-	async #dialKnownDNSonly(){
+	/*async #dialKnownDNSonly(){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const bootstrapdns = config.CONFIG_KNOWN_BOOTSTRAP_DNS
 		const response = await fetch(dnsresolver+'?name='+bootstrapdns+'&type=txt')
@@ -971,11 +982,11 @@ class webpeerjs{
 			const dnsaddr = '_dnsaddr.'+arr[2]
 			this.#dialDNSWebsocketWebtransport(id,dnsaddr)
 		}
-	}
+	}*/
 	
 	
 	//dial DNS with webtransport and websocket
-	async #dialDNSWebsocketWebtransport(id,dnsaddr){
+	/*async #dialDNSWebsocketWebtransport(id,dnsaddr){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const response = await fetch(dnsresolver+'?name='+dnsaddr+'&type=txt')
 		const json = await response.json()
@@ -999,7 +1010,7 @@ class webpeerjs{
 			this.#dialMultiaddress(mddrs)
 			this.#dialWebsocket(mddrs)
 		}
-	}
+	}*/
 	
 	
 	//dial only webtransport multiaddrs
@@ -1012,16 +1023,17 @@ class webpeerjs{
 				  return // if we succeed dialing the peer, no need to try another address
 				} catch (error) {
 				  //console.log(`failed to dial webtransport multiaddr: %o`, addr.toString())
+				  console.debug(error)
 				}
 			  }
 	}
 
 	//dial only webtransport multiaddrs
-	#dialWebtransport1(multiaddrs){
+	/*#dialWebtransport1(multiaddrs){
 			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('webtransport')&&maddr.protoNames().includes('certhash'))
 			if(webTransportMadrs.length == 0)return
 			this.#libp2p.dial(webTransportMadrs).then((data)=>{console.warn(data)},(data)=>{console.warn(data)})
-	}	
+	}*/
 	
 	//dial only websocket multiaddrs
 	async #dialWebsocket(multiaddrs){
@@ -1033,6 +1045,7 @@ class webpeerjs{
 				  return // if we succeed dialing the peer, no need to try another address
 				} catch (error) {
 				  //console.log(`failed to dial websocket multiaddr: %o`, addr)
+				  console.debug(error)
 				}
 			  }
 	}
@@ -1049,12 +1062,12 @@ class webpeerjs{
 		
 		const bootstrapAddrs = []
 		
-		let addrs = []
+		//let addrs = []
 		const getbootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
 		for(const peer of getbootstrap){
 			const addrs = peer.Peers[0].Addrs
 			const id = peer.Peers[0].ID
-			let mddrs = []
+			//let mddrs = []
 			for(const addr of addrs){
 				if(addr.includes('webtransport')&&addr.includes('certhash')){
 					bootstrapAddrs.push(addr+'/p2p/'+id)

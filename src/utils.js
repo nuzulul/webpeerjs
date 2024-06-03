@@ -24,13 +24,11 @@ export function uint8ArrayFromString(string){
 	return uint8Array
 }
 
-export function first(farr){
-	return new Promise(async function(myResolve, myReject) {
+export async function first(farr){
 		for await(const data of farr){
-			myResolve(data)
-			break
+			return data
+			//break
 		}
-	});	
 }
 
 export {Key}
@@ -132,7 +130,7 @@ export function metrics(data){
 
 		const errors = totals.readyErrored + totals.noiseErrored + totals.upgradeErrored
 		const timeouts = totals.readyTimedout + totals.noiseTimedout
-		const failureRate = ((errors + timeouts) / (errors + timeouts + totals.success) * 100).toFixed(2)
+		//const failureRate = ((errors + timeouts) / (errors + timeouts + totals.success) * 100).toFixed(2)
 		
 		lastStats = webTransportEvents
 		
@@ -151,13 +149,13 @@ export function metrics(data){
 		if ((fail-lastfailtreshold)>50){
 			if(isDialEnabled){
 				isDialEnabled = false
-				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+				//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
 				//console.warn(str)
 				setTimeout(()=>{
 					if(!isDialEnabled){
 						isDialEnabled = true
 						lastfailtreshold = fail
-						const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+						//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
 						//console.warn(str)
 					}
 				},6*60*1000)
@@ -167,7 +165,9 @@ export function metrics(data){
 		return isDialEnabled
 		
 	}
-	catch(e){}
+	catch{
+		console.debug('Metrics error')
+	}
 }
 
 /*
