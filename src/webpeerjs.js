@@ -1186,4 +1186,3 @@ class webpeerjs{
 
 //export module
 export {webpeerjs}
-export default webpeerjs

@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig-base.json",
+    "compilerOptions": {
+        "module": "umd",
+        "outDir": "./../temp/config",
+        "target": "es2015",
+        "rootDir": ".",
+		"resolveJsonModule": false
+    },
+  "include": ["./../config"],
+  "exclude": ["./../node_modules", "**/*.spec.ts"]
+}

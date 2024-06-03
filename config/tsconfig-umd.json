@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig-base.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "./../dist/umd",
+        "target": "es2015",
+		"emitDeclarationOnly": true,
+		"rootDir": "./../dist/umd"
+    },
+	"include": ["./../dist/umd/webpeerjs.js"],
+	"exclude": ["./../node_modules"],
+}

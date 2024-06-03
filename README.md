@@ -1,7 +1,7 @@
 # WebpeerJS
-> Simple peer-to-peer with IPFS. Build completely P2P web applications, no trackers or relay servers involved.
+> Simple peer-to-peer with [IPFS](https://ipfs.tech/). Build completely P2P web applications, no trackers or relay servers involved.
 
-WebpeerJS enables browser to browser connectivity
+WebpeerJS enables browser to browser connectivity without a central server.
 
 ## Example
 
@@ -37,9 +37,10 @@ npm i webpeerjs
 
 ## API
 
-- `createWebpeer()` Create new local node
-- `id` Local node unique ID as identity in the global network
-- `joinRoom()` Add local node to a room, return an array of three functions (sender, listener, members)
+- `createWebpeer()` Create a new local node.
+- `id` The unique ID of the local node as an identity in the global network.
+- `joinRoom()` Adding a local node to the room, returns an array of three functions (Sender, onListen, onMembers).
+- `peers` Get all connected peers.
 
 ## License
 

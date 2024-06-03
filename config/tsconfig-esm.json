@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig-base.json",
+    "compilerOptions": {
+        "module": "esnext",
+        "outDir": "./../dist/esm",
+        "target": "esnext",
+		"emitDeclarationOnly": true,
+		"rootDir": "./../dist/esm"
+    },
+	"include": ["./../dist/esm/webpeerjs.js"],
+	"exclude": ["./../node_modules"],
+}
