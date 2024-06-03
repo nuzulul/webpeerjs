@@ -83,6 +83,7 @@ let lastStats = {
 }
 
 let isDialEnabled = true
+let lastfailtreshold = 0
 
 export function metrics(data){
 	try{
@@ -136,10 +137,25 @@ export function metrics(data){
 		lastStats = webTransportEvents
 		
 		const fail = errors+timeouts
+		const treshold = errors+timeouts+stats.open+stats.pending
+		
+		if(treshold>50){
+			//console.log(`Treeshold hit : ${treshold}`)
+		}
 		
 		if(fail>50){
-			console.log(`Pending : ${stats.pending} , Succes : ${totals.success} , Fail : ${fail} `)
+			//console.log(`Open : ${stats.open} , Pending : ${stats.pending} , Succes : ${totals.success} , Fail : ${fail} `)
+
+		}
+		
+		if ((fail-lastfailtreshold)>50){
 			isDialEnabled = false
+			console.log('isDialEnabled',isDialEnabled)
+			setTimeout(()=>{
+				isDialEnabled = true
+				lastfailtreshold = fail
+				console.log('isDialEnabled',isDialEnabled)
+			},6*60*1000)
 		}
 		
 		return isDialEnabled
