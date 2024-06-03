@@ -1015,7 +1015,13 @@ class webpeerjs{
 				}
 			  }
 	}
-	
+
+	//dial only webtransport multiaddrs
+	#dialWebtransport1(multiaddrs){
+			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('webtransport')&&maddr.protoNames().includes('certhash'))
+			if(webTransportMadrs.length == 0)return
+			this.#libp2p.dial(webTransportMadrs).then((data)=>{console.warn(data)},(data)=>{console.warn(data)})
+	}	
 	
 	//dial only websocket multiaddrs
 	async #dialWebsocket(multiaddrs){
