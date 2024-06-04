@@ -1,15 +1,15 @@
 {
   "name": "webpeerjs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Simple peer-to-peer with IPFS",
   "main": "./dist/umd/webpeerjs.js",
-  "module": "./dist/esm/webpeerjs.js",
+  "module": "./src/webpeerjs.js",
   "imports": {
-    "#/pubsub-peer-discovery/*.js": "@libp2p/pubsub-peer-discovery/dist/src/*.js"
+    "#/pubsub-peer-discovery/*.js": "./node_modules/@libp2p/pubsub-peer-discovery/dist/src/*.js"
   },
   "exports": {
     ".": {
-      "import": "./dist/esm/webpeerjs.js",
+      "import": "./src/webpeerjs.js",
       "require": "./dist/umd/webpeerjs.js"
     }
   },
@@ -25,7 +25,7 @@
     "eslint:fix": "eslint ./src --fix",
 	
     "removedir": "node -e \"var fs = require('fs'); try{process.argv.slice(1).map((fpath) => fs.rmdirSync(fpath, { recursive: true }))}catch(err){console.log(`Dist not found`)}; process.exit(0);\"",
-    "build-all": "tsc -p config/tsconfig-rollup.json && rollup -c temp/config/rollup.config.build.js && echo {\"type\": \"commonjs\",\"types\": \"webpeerjs.d.ts\"}>dist\\umd\\package.json && echo {\"type\": \"module\",\"types\": \"webpeerjs.d.ts\"}>dist\\esm\\package.json",
+    "build-all": "tsc -p config/tsconfig-rollup.json && rollup -c temp/config/rollup.config.build.js && echo {\"type\": \"commonjs\"}>dist\\umd\\package.json && echo {\"type\": \"module\"}>dist\\esm\\package.json",
     "build-types": "tsc -p config/tsconfig-esm.json",
     "build": "npm run removedir dist temp && npm run build-all && npm run build-types",
 	

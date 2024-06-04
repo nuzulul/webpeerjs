@@ -10,18 +10,8 @@ export default [
       format: 'es',
     }
   ],
-  //plugins: [nodeResolve({browser: true}), commonjs()]
+  plugins: [nodeResolve({browser: true}), commonjs()]
 },
-/*{
-  input: 'src/webpeerjs.js',
-  output: [
-    {
-      file: 'dist/cjs/webpeerjs.js',
-      format: 'cjs',
-    }
-  ],
-  //plugins: [nodeResolve({browser: true}), commonjs()]
-},*/
 {
   input: 'src/umd.js',
   output: [

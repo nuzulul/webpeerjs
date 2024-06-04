@@ -217,6 +217,7 @@ class webpeerjs{
 						const json = JSON.parse(msg)
 						const prefix = json.prefix
 						const room = json.room
+						const rooms = json.rooms
 						const message = json.message
 						const signal = json.signal
 						const id = json.id
@@ -250,8 +251,20 @@ class webpeerjs{
 								if(this.#rooms[room]){
 									
 									//inbound message
-									this.#rooms[room].onMessage(message,id)
+									if(message){
+										this.#rooms[room].onMessage(message,id)
+									}
 									
+									//update room members
+									if(!this.#rooms[room].members.includes(id)){
+										this.#rooms[room].members.push(id)
+										this.#rooms[room].onMembers(this.#rooms[room].members)
+									}
+								}
+							}
+							
+							if(rooms){
+								for(const room of Object.keys(this.#rooms)){
 									//update room members
 									if(!this.#rooms[room].members.includes(id)){
 										this.#rooms[room].members.push(id)
@@ -264,11 +277,12 @@ class webpeerjs{
 								
 								//repply announce with ping
 								if(signal == 'announce'){
-									setTimeout(()=>{this.#ping()},1000)
+									setTimeout(()=>{this.#ping('yes')},1000)
+									//console.log('rooms',rooms)
 								}
 								
 								if(signal == 'ping'){
-									//do nothing
+									//console.log('rooms',rooms)
 								}
 								
 								//update connected webpeers
@@ -593,7 +607,7 @@ class webpeerjs{
 	//announce and ping via pupsub peer discovery
 	async #announce(){
 			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
-			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address})
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address,rooms:this.#rooms})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
 			  addrs: [uint8ArrayFromString(data)],
@@ -605,7 +619,7 @@ class webpeerjs{
 	}
 	async #ping(){
 			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
-			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address})
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address,rooms:this.#rooms})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
 			  addrs: [uint8ArrayFromString(data)],
