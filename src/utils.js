@@ -1,6 +1,6 @@
 import * as config from  './config'
 
-import { Peer as PBPeer } from '#/pubsub-peer-discovery/peer.js'
+import { Peer as PBPeer } from './peer'
 
 import { Key } from 'interface-datastore'
 

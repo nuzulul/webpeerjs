@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebpeerJS</title>
+  </head>
+  <body>
+    <div id="app"><ul id="myList"></ul></div>
+    <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.0/dist/umd/webpeerjs.min.js"></script>
+	<script type="module">
+		void async function main() {
+
+			function write(input){
+				const node = document.createElement("li")
+				const textnode = document.createTextNode(input)
+				node.appendChild(textnode)
+				document.getElementById("myList").appendChild(node)
+			}
+
+			const node = await webpeerjs.createWebpeer()
+			
+			write(`My node id : ${node.id}`)
+			
+			const room = 'myroom'
+			
+			write(`joinRoom : ${room}`)
+			
+			const [send,listen,members] = node.joinRoom(room)
+			
+			listen((message,id) => {
+				write(`Message from ${id} : ${message}`)
+			})
+			
+			members((data) => {
+				write(`Members update : ${data}`)
+				send('hello')
+			})
+			
+		}()
+	</script>
+  </body>
+</html>

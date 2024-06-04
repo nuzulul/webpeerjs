@@ -9,8 +9,7 @@ export default [
       file: 'dist/esm/webpeerjs.js',
       format: 'es',
     }
-  ],
-  plugins: [nodeResolve({browser: true}), commonjs()]
+  ]
 },
 {
   input: 'src/umd.js',

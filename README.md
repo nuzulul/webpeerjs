@@ -3,6 +3,8 @@
 
 WebpeerJS enables browser to browser connectivity without a central server.
 
+[Demo](https://nuzulul.github.io/webpeerjs/demo/)
+
 ## Example
 
 ```
@@ -16,14 +18,13 @@ void async function main() {
 	
 	const [send,listen,members] = node.joinRoom('myroom')
 	
-	send('hello')
-	
 	listen((message,id) => {
 		console.log(`Message from ${id} : ${message}`)
 	})
 	
 	members((data) => {
 		console.log(`Members : ${data}`)
+		send('hello')
 	})
 	
 }()
@@ -31,8 +32,16 @@ void async function main() {
 
 ## Install
 
+NPM :
+
 ```
 npm i webpeerjs
+```
+
+CDN :
+
+```
+<script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.0/dist/umd/webpeerjs.min.js"></script>
 ```
 
 ## API
