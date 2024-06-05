@@ -150,6 +150,7 @@ class webpeerjs{
 			
 			//console.log('on:'+event.detail.topic,event.detail.data)
 			//console.log('from '+event.detail.from.toString(),event)
+			//console.log('on:'+event.detail.topic)
 			
 			if (event.detail.type !== 'signed') {
 			  return
@@ -250,16 +251,17 @@ class webpeerjs{
 							if(room){
 								if(this.#rooms[room]){
 									
-									//inbound message
-									if(message){
-										this.#rooms[room].onMessage(message,id)
-									}
-									
 									//update room members
 									if(!this.#rooms[room].members.includes(id)){
 										this.#rooms[room].members.push(id)
 										this.#rooms[room].onMembers(this.#rooms[room].members)
 									}
+
+									//inbound message
+									if(message){
+										this.#rooms[room].onMessage(message,id)
+									}
+									
 								}
 							}
 							
@@ -1164,6 +1166,7 @@ class webpeerjs{
 					allowPublishToZeroTopicPeers: true,
 					msgIdFn: msgIdFnStrictNoSign,
 					ignoreDuplicatePublishError: true,
+					runOnTransientConnection:true,
 				}),
 				identify: identify(),
 				identifyPush: identifyPush(),
