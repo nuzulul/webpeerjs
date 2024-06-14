@@ -8,7 +8,8 @@ import {
 	Key,
 	msgIdFnStrictNoSign,
 	metrics,
-	getDigest
+	getDigest,
+	mkDebug
 } from './utils'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
@@ -317,7 +318,7 @@ class webpeerjs{
 
 					}catch(err){
 						//console.log('from '+event.detail.from.toString())
-						console.debug(err)
+						mkDebug(err)
 					}
 				}else{
 					const json = JSON.parse(topic)
@@ -1090,7 +1091,7 @@ class webpeerjs{
 				  return // if we succeed dialing the peer, no need to try another address
 				} catch (error) {
 				  //console.log(`failed to dial webtransport multiaddr: %o`, addr.toString())
-				  console.debug(error)
+				  mkDebug(error)
 				}
 			  }
 	}
@@ -1112,7 +1113,7 @@ class webpeerjs{
 				  return // if we succeed dialing the peer, no need to try another address
 				} catch (error) {
 				  //console.log(`failed to dial websocket multiaddr: %o`, addr)
-				  console.debug(error)
+				  mkDebug(error)
 				}
 			  }
 	}
@@ -1122,7 +1123,7 @@ class webpeerjs{
 	static async createWebpeer(){
 
 		// all libp2p debug logs
-		localStorage.setItem('debug', 'libp2p:*')
+		//localStorage.setItem('debug', 'libp2p:*')
 		
 		const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
 		await dbstore.open()

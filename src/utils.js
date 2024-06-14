@@ -12,6 +12,10 @@ const prefix = config.CONFIG_PREFIX
 
 export const mkErr = msg => new Error(`${prefix}: ${msg}`)
 
+export function mkDebug(error){
+	return
+}
+
 export {PBPeer}
 
 export function uint8ArrayToString(uint8Array){

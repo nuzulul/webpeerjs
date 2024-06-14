@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-	"start": "npm run dev"
+    "start": "npm run dev"
   },
   "devDependencies": {
     "vite": "^5.2.0"
