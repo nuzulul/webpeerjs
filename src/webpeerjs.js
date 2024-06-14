@@ -4,11 +4,13 @@ import {
 	PBPeer,
 	uint8ArrayToString,
 	uint8ArrayFromString,
-	//first,
+	first,
 	Key,
 	msgIdFnStrictNoSign,
-	metrics } from './utils'
-//import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
+	metrics,
+	getDigest
+} from './utils'
+import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
 import { webTransport } from '@libp2p/webtransport'
@@ -19,7 +21,7 @@ import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { identify, identifyPush } from '@libp2p/identify'
 import { multiaddr } from '@multiformats/multiaddr'
-//import { peerIdFromString } from '@libp2p/peer-id'
+import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { simpleMetrics } from '@libp2p/simple-metrics'
 
@@ -78,6 +80,9 @@ class webpeerjs{
 	//is dial enabled
 	#isDialEnabled
 	
+	//message tracker avoid double
+	#msgIdtracker
+	
 	id
 	status
 	IPFS
@@ -105,6 +110,7 @@ class webpeerjs{
 		this.#trackDisconnect = new Map()
 		this.#dialQueue = []
 		this.#isDialEnabled = true
+		this.#msgIdtracker = []
 		
 		this.peers = (function(f) {
 			return f
@@ -139,6 +145,9 @@ class webpeerjs{
 			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]){
 				setTimeout(()=>{
 					this.#announce()
+					setTimeout(()=>{
+						this.#announce()
+					},5000)
 				},1000)
 			}
 			
@@ -150,7 +159,7 @@ class webpeerjs{
 			
 			//console.log('on:'+event.detail.topic,event.detail.data)
 			//console.log('from '+event.detail.from.toString(),event)
-			//console.log('on:'+event.detail.topic)
+			//console.log('ontopic:'+event.detail.topic)
 			
 			if (event.detail.type !== 'signed') {
 			  return
@@ -220,6 +229,7 @@ class webpeerjs{
 						const room = json.room
 						const rooms = json.rooms
 						const message = json.message
+						const msgId = json.msgId
 						const signal = json.signal
 						const id = json.id
 						//console.log(`from ${id}:${signal} = ${message}`)
@@ -259,7 +269,11 @@ class webpeerjs{
 
 									//inbound message
 									if(message){
-										this.#rooms[room].onMessage(message,id)
+										const msgID = msgId+id
+										if(!this.#msgIdtracker.includes(msgID)){
+											this.#msgIdtracker.push(msgID)
+											this.#rooms[room].onMessage(message,id)
+										}
 									}
 									
 								}
@@ -461,13 +475,47 @@ class webpeerjs{
 			
 		})
 		
-		setInterval(()=>{
+		setTimeout(()=>{
 			this.#dialQueueList()
-		},5e3)
+			setInterval(()=>{
+				this.#dialQueueList()
+			},5e3)
+		},10e3)
+		
+
 		
 		setInterval(()=>{
 			this.#trackLastSeen()
 		},5e3)
+
+		setInterval(async()=>{
+			/*const peerId = peerIdFromString('QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN')
+			//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
+
+			//console.info(peerInfo)
+			for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
+				console.info(event)
+			}*/
+		},5e3)
+
+		/*setTimeout(async()=>{
+			try{
+				//console.log('getClosestPeers')
+				const digest = await getDigest()
+				//console.log('digest',digest)
+				for await (const event of this.#libp2p.services.aminoDHT.getClosestPeers(digest)){
+					if (event.name === 'FINAL_PEER'){
+						//event.peer.multiaddrs.forEach((ma) => {
+							//console.log(event.peer.id.toString(),ma.toString())
+						//})
+						//console.log(event.peer.id.toString(),event.peer.multiaddrs.toString())
+					}
+				}
+			}
+			catch(err){
+				console.error('query error', err)
+			}
+		},60e3)*/
 		
 	}
 
@@ -657,7 +705,8 @@ class webpeerjs{
 				onMessage : () => {},
 				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 				sendMessage : async (message) => {
-					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString()})
+					const msgId = (new Date()).getTime()
+					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
 					  addrs: [uint8ArrayFromString(data)],
@@ -739,14 +788,16 @@ class webpeerjs{
 					else{
 						const bootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
 						const index = bootstrap.findIndex((peer)=>peer.Peers[0].ID == id)
-						const addrs = bootstrap[index].Peers[0].Addrs
-						let mddrs = []
-						for(const addr of addrs){
-							const peeraddr = addr+'/p2p/'+id
-							const mddr = multiaddr(peeraddr)
-							mddrs.push(mddr)
+						if(index > -1){
+							const addrs = bootstrap[index].Peers[0].Addrs
+							let mddrs = []
+							for(const addr of addrs){
+								const peeraddr = addr+'/p2p/'+id
+								const mddr = multiaddr(peeraddr)
+								mddrs.push(mddr)
+							}
+							this.#dialMultiaddress(mddrs)
 						}
-						this.#dialMultiaddress(mddrs)
 					}
 				}
 			}
@@ -868,12 +919,12 @@ class webpeerjs{
 	
 	//dial to all known bootstrap peers and DNS
 	#dialKnownPeers(){
-		this.#dialKnownBootstrap()
-		setTimeout(()=>{
-			const peers = this.#libp2p.getPeers().length
-			if(peers == 0){
+		//this.#dialKnownBootstrap()
+		//setTimeout(()=>{
+			//const peers = this.#libp2p.getPeers().length
+			//if(peers == 0){
 				//currently not needed
-				//this.#dialKnownID()
+				this.#dialKnownID()
 				setTimeout(()=>{
 					const peers = this.#libp2p.getPeers().length
 					if(peers == 0){
@@ -888,8 +939,8 @@ class webpeerjs{
 						},15000)
 					}
 				},15000)
-			}
-		},15000)
+			//}
+		//},15000)
 	}
 	
 	
@@ -918,7 +969,7 @@ class webpeerjs{
 	
 	
 	//dial based on known peers ID
-	/*async #dialKnownID(){
+	async #dialKnownID(){
 		const api = config.CONFIG_DELEGATED_API
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS
@@ -943,7 +994,7 @@ class webpeerjs{
 				this.#dialMultiaddress(mddrs)
 			}
 		}
-	}*/
+	}
 	
 	
 	//dial based on known bootstrap DNS
@@ -1115,7 +1166,7 @@ class webpeerjs{
 				autoDialConcurrency:0,
 				autoDialMaxQueueLength:0,
 				autoDialPriority:1000,
-				autoDialDiscoveredPeersDebounce:30e3,
+				autoDialDiscoveredPeersDebounce:60e3,
 				maxParallelDials: 3,
 				dialTimeout: 5e3,
 				maxIncomingPendingConnections: 5,
@@ -1127,8 +1178,8 @@ class webpeerjs{
 			connectionEncryption: [noise()],
 			streamMuxers: [
 				yamux({
-					maxInboundStreams: 50,
-					maxOutboundStreams: 50,
+					maxInboundStreams: 20,
+					maxOutboundStreams: 20,
 				})
 			],
 			connectionGater: {

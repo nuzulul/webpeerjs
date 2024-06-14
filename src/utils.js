@@ -137,26 +137,26 @@ export function metrics(data){
 		const fail = errors+timeouts
 		const treshold = errors+timeouts+stats.open+stats.pending
 		
-		if(treshold>50){
+		if(treshold>60){
 			//console.log(`Treeshold hit : ${treshold}`)
 		}
 		
-		if(fail>50){
+		if(fail>60){
 			//console.log(`Open : ${stats.open} , Pending : ${stats.pending} , Succes : ${totals.success} , Fail : ${fail} `)
 
 		}
 		
-		if ((fail-lastfailtreshold)>50){
+		if ((fail-lastfailtreshold)>30){
 			if(isDialEnabled){
 				isDialEnabled = false
-				//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-				//console.warn(str)
+				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+				console.warn(str)
 				setTimeout(()=>{
 					if(!isDialEnabled){
 						isDialEnabled = true
 						lastfailtreshold = fail
-						//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-						//console.warn(str)
+						const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+						console.warn(str)
 					}
 				},6*60*1000)
 			}
@@ -176,3 +176,9 @@ onunhandledrejection = function(evt) {
 	return
 }
 */
+
+export async function getDigest(){
+	const buf = new TextEncoder().encode(Math.random().toString())
+	const digest = await sha256.encode(buf)
+	return digest
+}
