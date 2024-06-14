@@ -143,7 +143,7 @@ class webpeerjs{
 			this.#connections.set(id,addr)
 			
 			//required by joinRoom version 1 to announce via universal connectivity
-			if(connection.toString() === config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0]){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC.includes(connection.toString())){
 				setTimeout(()=>{
 					this.#announce()
 					setTimeout(()=>{
@@ -188,6 +188,11 @@ class webpeerjs{
 								const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(senderPeerId,metadata)
+								this.#connectedPeersArr.length = 0
+								for(const peer of this.#connectedPeers){	
+									const item = {id:peer[0],address:peer[1].addrs}
+									this.#connectedPeersArr.push(item)
+								}
 							}
 
 							//dial if not connected
@@ -489,16 +494,6 @@ class webpeerjs{
 			this.#trackLastSeen()
 		},5e3)
 
-		setInterval(async()=>{
-			/*const peerId = peerIdFromString('QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN')
-			//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
-
-			//console.info(peerInfo)
-			for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
-				console.info(event)
-			}*/
-		},5e3)
-
 		/*setTimeout(async()=>{
 			try{
 				//console.log('getClosestPeers')
@@ -542,6 +537,37 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+	
+	#findPublicPeer(){
+		setTimeout(async()=>{
+			const target = config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC[0]
+			if(!this.#isConnected(target)){
+				const peerId = peerIdFromString('12D3KooWFhXabKDwALpzqMbto94sB7rvmZ6M28hs9Y9xSopDKwQr')
+				//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
+
+				//console.info(peerInfo)
+				for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
+					//console.info('findPeer',event)
+					if (event.name === 'FINAL_PEER'){
+						//console.log(event.peer.id.toString(),event.peer.multiaddrs.toString())
+						let mddrs = []
+						let addrs = []
+						const id = event.peer.id.toString()
+						for(const mddr of event.peer.multiaddrs){
+							const peeraddr = mddr.toString()+'/p2p/'+id
+							const peermddr = multiaddr(peeraddr)
+							addrs.push(peeraddr)
+							mddrs.push(peermddr)
+						}
+						this.#dialedKnownBootstrap.set(id,addrs)
+						if(!this.#isConnected(id)){
+							this.#dialMultiaddress(mddrs)
+						}
+					}
+				}
+			}
+		},30e3)
+	}
 	
 	
 	//check the last seen in web peer
@@ -604,7 +630,7 @@ class webpeerjs{
 				return
 			}
 			
-			if(this.#webPeersId.includes(id) || id == config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0] ){
+			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) ){
 				this.#dialQueue.unshift(mddrs)
 			}
 			else{
@@ -762,7 +788,9 @@ class webpeerjs{
 			ids.push(keys[randomKey])
 			
 			//universal connectivity id for webpeer discovery and joinRoom version 1 to work
-			ids.push(config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS[0])
+			for(const id of config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC){
+				ids.push(id)
+			}
 			
 			for(const id of ids){
 				if(id == undefined)continue
@@ -926,6 +954,7 @@ class webpeerjs{
 			//if(peers == 0){
 				//currently not needed
 				this.#dialKnownID()
+				this.#findPublicPeer()
 				setTimeout(()=>{
 					const peers = this.#libp2p.getPeers().length
 					if(peers == 0){
