@@ -86,6 +86,7 @@ let lastStats = {
 
 let isDialEnabled = true
 let lastfailtreshold = 0
+let fail = 0
 
 export function metrics(data){
 	try{
@@ -138,7 +139,7 @@ export function metrics(data){
 		
 		lastStats = webTransportEvents
 		
-		const fail = errors+timeouts
+		fail = errors+timeouts
 		const treshold = errors+timeouts+stats.open+stats.pending
 		
 		if(treshold>60){
