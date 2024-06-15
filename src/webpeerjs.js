@@ -141,8 +141,8 @@ class webpeerjs{
 			const connect = connections.find((con)=>con.id == id)
 			const addr = connect.addr
 
-			if(config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id)){
-				if(!this.#connections.has(id)){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
+				if(!this.#connections.has(id)&&addr.includes('webtransport')){
 					await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 				}
 			}
@@ -150,7 +150,7 @@ class webpeerjs{
 			this.#connections.set(id,addr)
 			
 			//required by joinRoom version 1 to announce via universal connectivity
-			if(config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(connection.toString())){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
 				setTimeout(()=>{
 					this.#announce()
 					setTimeout(()=>{
@@ -547,11 +547,11 @@ class webpeerjs{
 	PRIVATE FUNCTION
 	*/
 	
-	#findPublicPeer(){
+	#findHybridPeer(){
 		setTimeout(async()=>{
 			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
-				//console.log('findPeer',target)
 				if(!this.#isConnected(target)){
+					//console.log('findPeer',target)
 					const peerId = peerIdFromString(target)
 					//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
 
@@ -868,7 +868,7 @@ class webpeerjs{
 				if(besttime>bestlimit){
 					const addr = remote.toString()
 					const id = peer.toString()
-					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit')){
+					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit') && addr.includes('webtransport')){
 						//await this.#dbstore.delete(new Key(id))
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
@@ -962,12 +962,13 @@ class webpeerjs{
 		//this.#dialKnownBootstrap()
 		setTimeout(()=>{
 			this.#dialSavedKnownID()
+			this.#findHybridPeer()
 			setTimeout(()=>{this.#dialUpdateSavedKnownID()},60000)
 			setTimeout(()=>{
 				const peers = this.#libp2p.getPeers().length
 				if(peers == 0){
 					this.#dialKnownID()
-					this.#findPublicPeer()
+					this.#findHybridPeer()
 					setTimeout(()=>{
 						const peers = this.#libp2p.getPeers().length
 						if(peers == 0){
