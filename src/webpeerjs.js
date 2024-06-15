@@ -141,7 +141,7 @@ class webpeerjs{
 			const connect = connections.find((con)=>con.id == id)
 			const addr = connect.addr
 
-			if(config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id)){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id)){
 				if(!this.#connections.has(id)){
 					await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 				}
@@ -150,7 +150,7 @@ class webpeerjs{
 			this.#connections.set(id,addr)
 			
 			//required by joinRoom version 1 to announce via universal connectivity
-			if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC.includes(connection.toString())){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(connection.toString())){
 				setTimeout(()=>{
 					this.#announce()
 					setTimeout(()=>{
@@ -549,7 +549,7 @@ class webpeerjs{
 	
 	#findPublicPeer(){
 		setTimeout(async()=>{
-			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC){
+			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
 				//console.log('findPeer',target)
 				if(!this.#isConnected(target)){
 					const peerId = peerIdFromString(target)
@@ -641,7 +641,7 @@ class webpeerjs{
 				return
 			}
 			
-			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC.includes(id)){
+			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
 				this.#dialQueue.unshift(mddrs)
 			}
 			else{
@@ -793,13 +793,13 @@ class webpeerjs{
 	#dialRandomBootstrap(){
 		setInterval(()=>{
 			//const keys = Array.from(this.#dialedKnownBootstrap.keys())
-			const keys = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS
+			const keys = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS
 			const randomKey = Math.floor(Math.random() * keys.length)
 			let ids = []
 			ids.push(keys[randomKey])
 			
 			//universal connectivity id for webpeer discovery and joinRoom version 1 to work
-			for(const id of config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC){
+			for(const id of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
 				ids.push(id)
 			}
 			
@@ -868,7 +868,7 @@ class webpeerjs{
 				if(besttime>bestlimit){
 					const addr = remote.toString()
 					const id = peer.toString()
-					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit')){
+					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit')){
 						//await this.#dbstore.delete(new Key(id))
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
@@ -1013,7 +1013,7 @@ class webpeerjs{
 	
 	async #dialSavedKnownID(){
 		let firsttime = true
-		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS){
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 			if(this.#dbstoreData.has(target)){
 				firsttime = false
 				let mddrs = []
@@ -1030,7 +1030,7 @@ class webpeerjs{
 			}
 		}
 		if(firsttime){
-			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS){
+			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
@@ -1054,7 +1054,7 @@ class webpeerjs{
 	}
 	
 	async #dialUpdateSavedKnownID(){
-		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS){
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 			if(!this.#connections.has(target)){
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
@@ -1081,10 +1081,10 @@ class webpeerjs{
 	
 	//dial based on known peers ID
 	async #dialKnownID(){
-		console.log('#dialKnownID()')
+		//console.log('#dialKnownID()')
 		const api = config.CONFIG_DELEGATED_API
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
-		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS
+		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS
 		const peers = await Promise.all(
 			BOOTSTRAP_PEER_IDS.map((peerId) => first(delegatedClient.getPeers(peerIdFromString(peerId)))),
 		)

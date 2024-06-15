@@ -19,7 +19,8 @@ void async function main() {
 	window.node = node
 
 	setInterval(() => {
-		statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
+		//statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
+		statusValueEl.innerHTML = node.status
 		updateConnectedPeers()
 		updateDiscoveredPeers()
 		updateListenAddress()
