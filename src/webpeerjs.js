@@ -130,7 +130,7 @@ class webpeerjs{
 		
 		
 		//listen to peer connect event
-		this.#libp2p.addEventListener("peer:connect", (evt) => {
+		this.#libp2p.addEventListener("peer:connect",async (evt) => {
 			
 			//console.log(`Connected to ${connection.toString()}`);
 			
@@ -140,10 +140,17 @@ class webpeerjs{
 			const connections = this.#libp2p.getConnections().map((con)=>{return {id:con.remotePeer.toString(),addr:con.remoteAddr.toString()}})
 			const connect = connections.find((con)=>con.id == id)
 			const addr = connect.addr
+
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id)){
+				if(!this.#connections.has(id)){
+					await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
+				}
+			}
+
 			this.#connections.set(id,addr)
 			
 			//required by joinRoom version 1 to announce via universal connectivity
-			if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC.includes(connection.toString()) || true){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC.includes(connection.toString())){
 				setTimeout(()=>{
 					this.#announce()
 					setTimeout(()=>{
@@ -634,7 +641,7 @@ class webpeerjs{
 				return
 			}
 			
-			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) ){
+			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC.includes(id)){
 				this.#dialQueue.unshift(mddrs)
 			}
 			else{
@@ -953,28 +960,31 @@ class webpeerjs{
 	//dial to all known bootstrap peers and DNS
 	#dialKnownPeers(){
 		//this.#dialKnownBootstrap()
-		//setTimeout(()=>{
-			//const peers = this.#libp2p.getPeers().length
-			//if(peers == 0){
-				//currently not needed
-				this.#dialKnownID()
-				this.#findPublicPeer()
-				setTimeout(()=>{
-					const peers = this.#libp2p.getPeers().length
-					if(peers == 0){
-						//currently not needed
-						//this.#dialKnownDNS()
-						setTimeout(()=>{
-							const peers = this.#libp2p.getPeers().length
-							if(peers == 0){
-								//currently not needed
-								//this.#dialKnownDNSonly()
-							}
-						},15000)
-					}
-				},15000)
-			//}
-		//},15000)
+		setTimeout(()=>{
+			this.#dialSavedKnownID()
+			setTimeout(()=>{this.#dialUpdateSavedKnownID()},60000)
+			setTimeout(()=>{
+				const peers = this.#libp2p.getPeers().length
+				if(peers == 0){
+					this.#dialKnownID()
+					this.#findPublicPeer()
+					setTimeout(()=>{
+						const peers = this.#libp2p.getPeers().length
+						if(peers == 0){
+							//currently not needed
+							//this.#dialKnownDNS()
+							setTimeout(()=>{
+								const peers = this.#libp2p.getPeers().length
+								if(peers == 0){
+									//currently not needed
+									//this.#dialKnownDNSonly()
+								}
+							},15000)
+						}
+					},15000)
+				}
+			},15000)
+		},5000)
 	}
 	
 	
@@ -1001,9 +1011,77 @@ class webpeerjs{
 		}
 	}
 	
+	async #dialSavedKnownID(){
+		let firsttime = true
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS){
+			if(this.#dbstoreData.has(target)){
+				firsttime = false
+				let mddrs = []
+				let addrs = []
+				const id = target
+				const peeraddr = this.#dbstoreData.get(target)
+				const peermddr = multiaddr(peeraddr)
+				addrs.push(peeraddr)
+				mddrs.push(peermddr)
+				this.#dialedKnownBootstrap.set(id,addrs)
+				if(!this.#isConnected(id)){
+					this.#dialMultiaddress(mddrs)
+				}
+			}
+		}
+		if(firsttime){
+			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS){
+				const api = config.CONFIG_DELEGATED_API
+				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
+				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
+				const address = peer.Addrs
+				const id = peer.ID
+				let mddrs = []
+				let addrs = []
+				for(const addr of address){
+					const peeraddr = addr.toString()+'/p2p/'+id.toString()
+					const peermddr = multiaddr(peeraddr)
+					addrs.push(peeraddr)
+					mddrs.push(peermddr)
+				}
+				
+				this.#dialedKnownBootstrap.set(id,addrs)
+				if(!this.#isConnected(id)){
+					this.#dialMultiaddress(mddrs)
+				}	
+			}
+		}
+	}
+	
+	async #dialUpdateSavedKnownID(){
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS){
+			if(!this.#connections.has(target)){
+				const api = config.CONFIG_DELEGATED_API
+				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
+				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
+				const address = peer.Addrs
+				const id = peer.ID
+				let mddrs = []
+				let addrs = []
+				for(const addr of address){
+					const peeraddr = addr.toString()+'/p2p/'+id.toString()
+					const peermddr = multiaddr(peeraddr)
+					addrs.push(peeraddr)
+					mddrs.push(peermddr)
+				}
+				
+				this.#dialedKnownBootstrap.set(id,addrs)
+				if(!this.#isConnected(id)){
+					this.#dialMultiaddress(mddrs)
+				}	
+			}
+		}
+	}
+	
 	
 	//dial based on known peers ID
 	async #dialKnownID(){
+		console.log('#dialKnownID()')
 		const api = config.CONFIG_DELEGATED_API
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEER_IDS

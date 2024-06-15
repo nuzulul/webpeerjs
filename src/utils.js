@@ -155,13 +155,13 @@ export function metrics(data){
 			if(isDialEnabled){
 				isDialEnabled = false
 				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-				console.warn(str)
+				console.warn('dial disabled')
 				setTimeout(()=>{
 					if(!isDialEnabled){
 						isDialEnabled = true
 						lastfailtreshold = fail
 						const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-						console.warn(str)
+						console.warn('dial enabled')
 					}
 				},6*60*1000)
 			}
