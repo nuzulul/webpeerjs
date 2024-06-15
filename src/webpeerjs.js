@@ -445,7 +445,7 @@ class webpeerjs{
 				let mddrs = []
 				const addrs = multiaddr(addr)
 				mddrs.push(addrs)
-				this.#dialMultiaddress(mddrs)
+				//this.#dialMultiaddress(mddrs)
 			}
 		});
 		
@@ -493,7 +493,7 @@ class webpeerjs{
 			this.#dialQueueList()
 			setInterval(()=>{
 				this.#dialQueueList()
-			},5e3)
+			},3e3)
 		},10e3)
 		
 
@@ -671,6 +671,7 @@ class webpeerjs{
 			if(mddrs != undefined && mddrs.length>0){
 				
 				const id = mddrs[0].toString().split('/').pop()
+				//console.log('dial',id)
 				
 				if(this.#isConnected(id))continue
 				if(queue.includes(id)){continue;}
@@ -1056,7 +1057,8 @@ class webpeerjs{
 	
 	async #dialUpdateSavedKnownID(){
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
-			if(!this.#connections.has(target)){
+			if(!this.#connections.has(target) && this.#isDialEnabled){
+				//console.log('#dialUpdateSavedKnownID()',target)
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
