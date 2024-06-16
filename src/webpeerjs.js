@@ -493,7 +493,7 @@ class webpeerjs{
 			this.#dialQueueList()
 			setInterval(()=>{
 				this.#dialQueueList()
-			},3e3)
+			},5e3)
 		},10e3)
 		
 
@@ -521,6 +521,14 @@ class webpeerjs{
 				console.error('query error', err)
 			}
 		},60e3)*/
+		
+		/*setTimeout(async()=>{
+			const key = uint8ArrayFromString(config.CONFIG_PREFIX)
+			const value = uint8ArrayFromString(this.id)
+			for await (const event of this.#libp2p.services.aminoDHT.put(key,value)){
+				console.log('put',event)
+			}
+		},30e3)*/
 		
 	}
 
@@ -550,7 +558,7 @@ class webpeerjs{
 	#findHybridPeer(){
 		setTimeout(async()=>{
 			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
-				if(!this.#isConnected(target)){
+				if(!this.#isConnected(target) && !this.#connections.has(target) && this.#isDialEnabled ){
 					//console.log('findPeer',target)
 					const peerId = peerIdFromString(target)
 					//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
@@ -577,7 +585,7 @@ class webpeerjs{
 					}
 				}
 			}
-		},30e3)
+		},60e3)
 	}
 	
 	
@@ -656,7 +664,7 @@ class webpeerjs{
 		
 		if(!this.#isDialEnabled)return
 		
-		const mddrsToDial = 3
+		const mddrsToDial = 5
 		
 		let queue = []
 		for(const item of this.#libp2p.getDialQueue()){
@@ -671,10 +679,11 @@ class webpeerjs{
 			if(mddrs != undefined && mddrs.length>0){
 				
 				const id = mddrs[0].toString().split('/').pop()
-				//console.log('dial',id)
 				
 				if(this.#isConnected(id))continue
 				if(queue.includes(id)){continue;}
+				
+				//console.log('dial',id)
 
 				//dial with webtransport
 				this.#dialWebtransport(mddrs)
@@ -964,7 +973,7 @@ class webpeerjs{
 		setTimeout(()=>{
 			this.#dialSavedKnownID()
 			this.#findHybridPeer()
-			setTimeout(()=>{this.#dialUpdateSavedKnownID()},60000)
+			setTimeout(()=>{this.#dialUpdateSavedKnownID()},50000)
 			setTimeout(()=>{
 				const peers = this.#libp2p.getPeers().length
 				if(peers == 0){
@@ -1057,7 +1066,7 @@ class webpeerjs{
 	
 	async #dialUpdateSavedKnownID(){
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
-			if(!this.#connections.has(target) && this.#isDialEnabled){
+			if(!this.#connections.has(target) && this.#isDialEnabled && this.#dbstoreData.has(target)){
 				//console.log('#dialUpdateSavedKnownID()',target)
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)

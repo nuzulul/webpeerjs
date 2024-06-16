@@ -142,16 +142,16 @@ export function metrics(data){
 		fail = errors+timeouts
 		const treshold = errors+timeouts+stats.open+stats.pending
 		
-		if(treshold>60){
+		if(treshold>40){
 			//console.log(`Treeshold hit : ${treshold}`)
 		}
 		
-		if(fail>60){
+		if(fail>40){
 			//console.log(`Open : ${stats.open} , Pending : ${stats.pending} , Succes : ${totals.success} , Fail : ${fail} `)
 
 		}
 		
-		if ((fail-lastfailtreshold)>30){
+		if ((fail-lastfailtreshold)>40){
 			if(isDialEnabled){
 				isDialEnabled = false
 				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
