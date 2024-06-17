@@ -1,5 +1,6 @@
 const prefix = 'webpeerjs'
 export const CONFIG_PREFIX = prefix
+export const CONFIG_PROTOCOL = '/'+prefix+'/0.0.1'
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
 export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'

@@ -132,10 +132,10 @@ class webpeerjs{
 		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect",async (evt) => {
 			
-			//console.log(`Connected to ${connection.toString()}`);
-			
 			const connection = evt.detail;
 			const id = evt.detail.toString()
+			
+			//console.log('peer:connect '+id,evt)
 			
 			const connections = this.#libp2p.getConnections().map((con)=>{return {id:con.remotePeer.toString(),addr:con.remoteAddr.toString()}})
 			const connect = connections.find((con)=>con.id == id)
@@ -157,6 +157,22 @@ class webpeerjs{
 						this.#announce()
 					},5000)
 				},1000)
+			}
+			
+			if(this.#webPeersAddrs.has(id)){
+				
+				let address = [addr]
+
+				//update connected webpeers
+				const now = new Date().getTime()
+				const metadata = {addrs:address,last:now}
+				this.#connectedPeers.set(id,metadata)
+				this.#webPeersAddrs.set(id,address)
+				this.#connectedPeersArr.length = 0
+				for(const peer of this.#connectedPeers){	
+					const item = {id:peer[0],address:peer[1].addrs}
+					this.#connectedPeersArr.push(item)
+				}
 			}
 			
 		});
@@ -381,7 +397,7 @@ class webpeerjs{
 							const mddr = multiaddr(addr)
 							mddrs.push(mddr)
 						}
-						//this.#dialMultiaddress(mddrs)
+						this.#dialMultiaddress(mddrs)
 					}
 				}
 			}
@@ -467,6 +483,37 @@ class webpeerjs{
 			this.#ping()
 		})
 		
+		this.#libp2p.addEventListener('peer:identify', (evt) => {
+			//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
+			if(evt.detail.protocols.includes(config.CONFIG_PROTOCOL)){
+				//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail.listenAddrs.toString())
+				
+				const id = evt.detail.peerId.toString()
+				let address = []
+				
+				for(const addrs of evt.detail.listenAddrs){
+					const addr = addrs.toString()+'/p2p/'+id
+					if(addr.includes('webtransport')){
+						address.push(addr)
+					}
+				}
+
+				//update connected webpeers
+				const now = new Date().getTime()
+				const metadata = {addrs:address,last:now}
+				this.#connectedPeers.set(id,metadata)
+				this.#webPeersAddrs.set(id,address)
+				this.#connectedPeersArr.length = 0
+				for(const peer of this.#connectedPeers){	
+					const item = {id:peer[0],address:peer[1].addrs}
+					this.#connectedPeersArr.push(item)
+				}
+				
+				if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+
+			}
+		})
+		
 		//dial known peers from configuration
 		this.#dialKnownPeers()
 	
@@ -481,6 +528,8 @@ class webpeerjs{
 		
 		//dial random discovered peers
 		//this.#dialdiscoveredpeers()
+		
+		this.#registerProtocol()
 		
 
 		onMetrics((data)=>{
@@ -554,6 +603,29 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+	
+	async #registerProtocol(){
+		const handler = ({ connection, stream, protocol }) => {
+		  // use stream or connection according to the needs
+		}
+
+		await this.#libp2p.handle(config.CONFIG_PROTOCOL, handler, {
+		  maxInboundStreams: 5,
+		  maxOutboundStreams: 5
+		})
+
+		await this.#libp2p.register(config.CONFIG_PROTOCOL, {
+		  onConnect: (peer, connection) => {
+			// handle connect
+			//console.log('handle connect',peer)
+		  },
+		  onDisconnect: (peer, connection) => {
+			// handle disconnect
+			//console.log('handle disconnect',peer)
+		  }
+		})
+
+	}
 	
 	#findHybridPeer(){
 		setTimeout(async()=>{
