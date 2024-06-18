@@ -159,20 +159,29 @@ class webpeerjs{
 				},1000)
 			}
 			
-			if(this.#webPeersAddrs.has(id)){
+			if(this.#webPeersId.includes(id)){
 				
 				let address = [addr]
 
-				//update connected webpeers
-				const now = new Date().getTime()
-				const metadata = {addrs:address,last:now}
-				this.#connectedPeers.set(id,metadata)
-				this.#webPeersAddrs.set(id,address)
-				this.#connectedPeersArr.length = 0
-				for(const peer of this.#connectedPeers){	
-					const item = {id:peer[0],address:peer[1].addrs}
-					this.#connectedPeersArr.push(item)
+				if(this.#connectedPeers.has(id)){
+					//reset this last seen
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata)
 				}
+				else{
+					//add to connected webpeers
+					this.#onConnectFn(id)
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata)
+					this.#connectedPeersArr.length = 0
+					for(const peer of this.#connectedPeers){	
+						const item = {id:peer[0],address:peer[1].addrs}
+						this.#connectedPeersArr.push(item)
+					}
+				}
+
 			}
 			
 		});
@@ -331,7 +340,7 @@ class webpeerjs{
 								}
 								
 								//update connected webpeers
-								const now = new Date().getTime()
+								/*const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(id,metadata)
 								this.#webPeersAddrs.set(id,address)
@@ -339,7 +348,7 @@ class webpeerjs{
 								for(const peer of this.#connectedPeers){	
 									const item = {id:peer[0],address:peer[1].addrs}
 									this.#connectedPeersArr.push(item)
-								}
+								}*/
 									
 							}
 						}
@@ -486,7 +495,7 @@ class webpeerjs{
 		this.#libp2p.addEventListener('peer:identify', (evt) => {
 			//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
 			if(evt.detail.protocols.includes(config.CONFIG_PROTOCOL)){
-				//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail.listenAddrs.toString())
+				//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
 				
 				const id = evt.detail.peerId.toString()
 				let address = []
@@ -497,19 +506,27 @@ class webpeerjs{
 						address.push(addr)
 					}
 				}
-
-				//update connected webpeers
-				const now = new Date().getTime()
-				const metadata = {addrs:address,last:now}
-				this.#connectedPeers.set(id,metadata)
-				this.#webPeersAddrs.set(id,address)
-				this.#connectedPeersArr.length = 0
-				for(const peer of this.#connectedPeers){	
-					const item = {id:peer[0],address:peer[1].addrs}
-					this.#connectedPeersArr.push(item)
-				}
 				
 				if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+
+				if(this.#connectedPeers.has(id)){
+					//reset this last seen
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata)
+				}
+				else{
+					//add to connected webpeers
+					this.#onConnectFn(id)
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata)
+					this.#connectedPeersArr.length = 0
+					for(const peer of this.#connectedPeers){	
+						const item = {id:peer[0],address:peer[1].addrs}
+						this.#connectedPeersArr.push(item)
+					}
+				}
 
 			}
 		})
@@ -838,7 +855,7 @@ class webpeerjs{
 				},
 				members : [this.id],
 				onMembers : () => {},
-				onMembersChange : f => {this.#rooms[room] = {...this.#rooms[room], onMembers: f};this.#rooms[room].onMembers(this.#rooms[room].members)},
+				onMembersChange : f => {this.#rooms[room] = {...this.#rooms[room], onMembers: f};this.#rooms[room].onMembers(this.#rooms[room].members);this.#ping()},
 			}
 		}
 		

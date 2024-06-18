@@ -1,6 +1,6 @@
 {
   "name": "webpeerjs",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Simple peer-to-peer with IPFS",
   "main": "./dist/umd/webpeerjs.js",
   "module": "./dist/esm/webpeerjs.js",
