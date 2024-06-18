@@ -1154,8 +1154,12 @@ class webpeerjs{
 	}
 	
 	async #dialUpdateSavedKnownID(){
+		let firsttime = true
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
-			if(!this.#connections.has(target) && this.#isDialEnabled && this.#dbstoreData.has(target)){
+			if(this.#dbstoreData.has(target)){
+				firsttime = false
+			}
+			if(!this.#connections.has(target) && this.#isDialEnabled && (this.#dbstoreData.has(target) || firsttime)){
 				//console.log('#dialUpdateSavedKnownID()',target)
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
