@@ -5,7 +5,21 @@ WebpeerJS enables browser to browser connectivity without a central server.
 
 [Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
-## Example
+## Install
+
+NPM :
+
+```
+npm i webpeerjs
+```
+
+CDN :
+
+```
+<script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.0/dist/umd/webpeerjs.min.js"></script>
+```
+
+## Usage
 
 ```
 import { webpeerjs } from 'webpeerjs'
@@ -30,20 +44,6 @@ void async function main() {
 }()
 ```
 
-## Install
-
-NPM :
-
-```
-npm i webpeerjs
-```
-
-CDN :
-
-```
-<script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.0/dist/umd/webpeerjs.min.js"></script>
-```
-
 ## API
 
 - `createWebpeer()` Create a new local node.
@@ -51,8 +51,6 @@ CDN :
 - `joinRoom()` Adding a local node to the room, returns an array of three functions (Sender, onListen, onMembers).
 - `peers` Get all connected peers.
 
-## License
+## Maintainers
 
-MIT License
-
-Copyright (c) 2024 [Nuzulul Zulkarnain](https://github.com/nuzulul)
+[Nuzulul Zulkarnain](https://github.com/nuzulul)
