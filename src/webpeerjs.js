@@ -681,6 +681,7 @@ class webpeerjs{
 	//check the last seen in web peer
 	#trackLastSeen(){
 		const timeout = 25*1000
+		const forcetimeout = 60*1000
 		const now = new Date().getTime()
 		
 		//if webpeer last seen grather then timeout send onDisconnect
@@ -688,26 +689,26 @@ class webpeerjs{
 			const id = peer[0]
 			const last = peer[1].last
 			const time = now-last
-			if(time>timeout){
-				if(!this.#isConnected(id)){
-					this.#connectedPeers.delete(id)
-					this.#connectedPeersArr.length = 0
-					for(const peer of this.#connectedPeers){	
-						const item = {id:peer[0],address:peer[1].addrs}
-						this.#connectedPeersArr.push(item)
-					}
-					this.#onDisconnectFn(id)
-					
-					//remove id from room member
-					const rooms = Object.keys(this.#rooms)
-					for(const room of rooms){
-						if(this.#rooms[room].members.includes(id)){
-							const index = this.#rooms[room].members.indexOf(id)
-							this.#rooms[room].members.splice(index,1)
-							this.#rooms[room].onMembers(this.#rooms[room].members)
-						}
+			if((time>timeout && !this.#isConnected(id))||(time>forcetimeout)){
+				
+				this.#connectedPeers.delete(id)
+				this.#connectedPeersArr.length = 0
+				for(const peer of this.#connectedPeers){	
+					const item = {id:peer[0],address:peer[1].addrs}
+					this.#connectedPeersArr.push(item)
+				}
+				this.#onDisconnectFn(id)
+				
+				//remove id from room member
+				const rooms = Object.keys(this.#rooms)
+				for(const room of rooms){
+					if(this.#rooms[room].members.includes(id)){
+						const index = this.#rooms[room].members.indexOf(id)
+						this.#rooms[room].members.splice(index,1)
+						this.#rooms[room].onMembers(this.#rooms[room].members)
 					}
 				}
+				
 			}
 		}
 	}
