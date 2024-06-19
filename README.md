@@ -5,6 +5,11 @@ WebpeerJS enables browser to browser connectivity without a central server.
 
 [Live Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
+## Features
+
+* ✅ Decentralized Network
+* ✅ Broadcast Message
+
 ## Install
 
 NPM :
