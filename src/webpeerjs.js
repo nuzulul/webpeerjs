@@ -689,21 +689,23 @@ class webpeerjs{
 			const last = peer[1].last
 			const time = now-last
 			if(time>timeout){
-				this.#connectedPeers.delete(id)
-				this.#connectedPeersArr.length = 0
-				for(const peer of this.#connectedPeers){	
-					const item = {id:peer[0],address:peer[1].addrs}
-					this.#connectedPeersArr.push(item)
-				}
-				this.#onDisconnectFn(id)
-				
-				//remove id from room member
-				const rooms = Object.keys(this.#rooms)
-				for(const room of rooms){
-					if(this.#rooms[room].members.includes(id)){
-						const index = this.#rooms[room].members.indexOf(id)
-						this.#rooms[room].members.splice(index,1)
-						this.#rooms[room].onMembers(this.#rooms[room].members)
+				if(!isConnected(id)){
+					this.#connectedPeers.delete(id)
+					this.#connectedPeersArr.length = 0
+					for(const peer of this.#connectedPeers){	
+						const item = {id:peer[0],address:peer[1].addrs}
+						this.#connectedPeersArr.push(item)
+					}
+					this.#onDisconnectFn(id)
+					
+					//remove id from room member
+					const rooms = Object.keys(this.#rooms)
+					for(const room of rooms){
+						if(this.#rooms[room].members.includes(id)){
+							const index = this.#rooms[room].members.indexOf(id)
+							this.#rooms[room].members.splice(index,1)
+							this.#rooms[room].onMembers(this.#rooms[room].members)
+						}
 					}
 				}
 			}
