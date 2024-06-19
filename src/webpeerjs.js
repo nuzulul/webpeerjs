@@ -120,6 +120,8 @@ class webpeerjs{
 		this.status = (function(libp2p) {
 			return libp2p.status
 		})(this.#libp2p);
+		
+		this.status = 'unconnected'
 
 		this.IPFS = (function(libp2p,discoveredPeers) {
 			const obj = {libp2p,discoveredPeers}
@@ -175,11 +177,7 @@ class webpeerjs{
 					const now = new Date().getTime()
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata)
-					this.#connectedPeersArr.length = 0
-					for(const peer of this.#connectedPeers){	
-						const item = {id:peer[0],address:peer[1].addrs}
-						this.#connectedPeersArr.push(item)
-					}
+					this.#updatePeers()
 				}
 
 			}
@@ -220,11 +218,7 @@ class webpeerjs{
 								const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(senderPeerId,metadata)
-								this.#connectedPeersArr.length = 0
-								for(const peer of this.#connectedPeers){	
-									const item = {id:peer[0],address:peer[1].addrs}
-									this.#connectedPeersArr.push(item)
-								}
+								this.#updatePeers()
 							}
 
 							//dial if not connected
@@ -288,11 +282,7 @@ class webpeerjs{
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(id,metadata)
 								this.#webPeersAddrs.set(id,address)
-								this.#connectedPeersArr.length = 0
-								for(const peer of this.#connectedPeers){	
-									const item = {id:peer[0],address:peer[1].addrs}
-									this.#connectedPeersArr.push(item)
-								}
+								this.#updatePeers()
 							}
 
 							
@@ -338,17 +328,6 @@ class webpeerjs{
 								if(signal == 'ping'){
 									//console.log('rooms',rooms)
 								}
-								
-								//update connected webpeers
-								/*const now = new Date().getTime()
-								const metadata = {addrs:address,last:now}
-								this.#connectedPeers.set(id,metadata)
-								this.#webPeersAddrs.set(id,address)
-								this.#connectedPeersArr.length = 0
-								for(const peer of this.#connectedPeers){	
-									const item = {id:peer[0],address:peer[1].addrs}
-									this.#connectedPeersArr.push(item)
-								}*/
 									
 							}
 						}
@@ -521,11 +500,7 @@ class webpeerjs{
 					const now = new Date().getTime()
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata)
-					this.#connectedPeersArr.length = 0
-					for(const peer of this.#connectedPeers){	
-						const item = {id:peer[0],address:peer[1].addrs}
-						this.#connectedPeersArr.push(item)
-					}
+					this.#updatePeers()
 				}
 
 			}
@@ -620,6 +595,20 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+
+	#updatePeers(){
+		this.#connectedPeersArr.length = 0
+		for(const peer of this.#connectedPeers){	
+			const item = {id:peer[0],address:peer[1].addrs}
+			this.#connectedPeersArr.push(item)
+		}
+		if(this.#connectedPeers.size > 0){
+			this.status = 'connected'
+		}
+		else{
+			this.status = 'unconnected'
+		}
+	}
 	
 	async #registerProtocol(){
 		const handler = ({ connection, stream, protocol }) => {
@@ -692,11 +681,7 @@ class webpeerjs{
 			if((time>timeout && !this.#isConnected(id))||(time>forcetimeout)){
 				
 				this.#connectedPeers.delete(id)
-				this.#connectedPeersArr.length = 0
-				for(const peer of this.#connectedPeers){	
-					const item = {id:peer[0],address:peer[1].addrs}
-					this.#connectedPeersArr.push(item)
-				}
+				this.#updatePeers()
 				this.#onDisconnectFn(id)
 				
 				//remove id from room member
