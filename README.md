@@ -3,7 +3,7 @@
 
 WebpeerJS enables browser to browser connectivity without a central server.
 
-[Demo](https://nuzulul.github.io/webpeerjs/demo/)
+[Live Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
 ## Install
 
@@ -30,7 +30,7 @@ void async function main() {
 	
 	console.log(`My node id : ${node.id}`)
 	
-	const [send,listen,members] = node.joinRoom('myroom')
+	const [broadcast,listen,members] = node.joinRoom('myroom')
 	
 	listen((message,id) => {
 		console.log(`Message from ${id} : ${message}`)
@@ -38,7 +38,7 @@ void async function main() {
 	
 	members((data) => {
 		console.log(`Members : ${data}`)
-		send('hello')
+		broadcast('hello')
 	})
 	
 }()
@@ -46,9 +46,9 @@ void async function main() {
 
 ## API
 
-- `createWebpeer()` Create a new local node.
-- `id` The unique ID of the local node as an identity in the global network.
-- `joinRoom()` Adding a local node to the room, returns an array of three functions (Sender, onListen, onMembers).
+- `createWebpeer()` Create a new node.
+- `id` The unique ID of the node as an identity in the global network.
+- `joinRoom()` Adding the node to the room, returns an array of three functions (Broadcaster, onListenMessage, onMembersUpdate).
 - `peers` Get all connected peers.
 
 ## Maintainers

@@ -26,7 +26,7 @@
 			
 			write(`joinRoom : ${room}`)
 			
-			const [send,listen,members] = node.joinRoom(room)
+			const [broadcast,listen,members] = node.joinRoom(room)
 			
 			listen((message,id) => {
 				write(`Message from ${id} : ${message}`)
@@ -34,7 +34,7 @@
 			
 			members((data) => {
 				write(`Members update : ${data}`)
-				send('hello')
+				broadcast('hello')
 			})
 			
 		}()
