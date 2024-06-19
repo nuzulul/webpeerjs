@@ -50,6 +50,13 @@ void async function main() {
 - `id` The unique ID of the node as an identity in the global network.
 - `joinRoom()` Adding the node to the room, returns an array of three functions (Broadcaster, onListenMessage, onMembersUpdate).
 - `peers` Get all connected peers.
+- `status` Get the node status, returns `connected` or `unconnected`.
+
+## Related
+
+- [simple-peer](https://github.com/feross/simple-peer) - Simple WebRTC video, voice, and data channels.
+- [peerjs](https://github.com/peers/peerjs) - Simple peer-to-peer with WebRTC.
+- [trystero](https://github.com/dmotz/trystero) - Build instant multiplayer webapps, no server required.
 
 ## Maintainers
 
