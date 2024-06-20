@@ -110,11 +110,11 @@ void async function main() {
 		number++
 	},5000)
 	
-	node.onJoin((id)=>{
+	node.onConnect((id)=>{
 		console.log(`Connected to ${id}`)
 	})
 	
-	node.onLeave((id)=>{
+	node.onDisconnect((id)=>{
 		console.log(`Disconnected from ${id}`);
 	})
 	

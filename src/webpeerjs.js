@@ -582,14 +582,60 @@ class webpeerjs{
 
 	//Listen on new peer connection
 	#onConnectFn = () => {}
-	onJoin = f => (this.#onConnectFn = f)
+	onConnect = f => (this.#onConnectFn = f)
 
 
 	//Listen on peer disconnect
 	#onDisconnectFn = () => {}
-	onLeave = f => (this.#onDisconnectFn = f)	
+	onDisconnect = f => (this.#onDisconnectFn = f)	
 
+	joinRoom = room => {
+		if (this.#rooms[room]) {
+			return [
+				this.#rooms[room].sendMessage,
+				this.#rooms[room].listenMessage,
+				this.#rooms[room].onMembersChange
+			]
+			
 
+		}
+
+		if (!room) {
+			throw mkErr('room is required')
+		}
+		
+		//join room version 1 user pupsub via pupsub peer discovery
+		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
+
+			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
+			
+			this.#rooms[room] = {
+				onMessage : () => {},
+				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
+				sendMessage : async (message) => {
+					const msgId = (new Date()).getTime()
+					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
+					const peer = {
+					  publicKey: this.#libp2p.peerId.publicKey,
+					  addrs: [uint8ArrayFromString(data)],
+					}
+					const encodedPeer = PBPeer.encode(peer)
+					for(const topic of topics){
+						await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
+					}
+				},
+				members : [this.id],
+				onMembers : () => {},
+				onMembersChange : f => {this.#rooms[room] = {...this.#rooms[room], onMembers: f};this.#rooms[room].onMembers(this.#rooms[room].members);this.#ping()},
+			}
+		}
+		
+		return [
+			this.#rooms[room].sendMessage,
+			this.#rooms[room].listenMessage,
+			this.#rooms[room].onMembersChange
+		]
+	}
 
 
 	/*
@@ -803,55 +849,6 @@ class webpeerjs{
 			for(const topic of topics){
 				await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
 			}
-	}
-
-	
-	joinRoom = room => {
-		if (this.#rooms[room]) {
-			return [
-				this.#rooms[room].sendMessage,
-				this.#rooms[room].listenMessage,
-				this.#rooms[room].onMembersChange
-			]
-			
-
-		}
-
-		if (!room) {
-			throw mkErr('room is required')
-		}
-		
-		//join room version 1 user pupsub via pupsub peer discovery
-		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
-
-			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
-			
-			this.#rooms[room] = {
-				onMessage : () => {},
-				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
-				sendMessage : async (message) => {
-					const msgId = (new Date()).getTime()
-					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
-					const peer = {
-					  publicKey: this.#libp2p.peerId.publicKey,
-					  addrs: [uint8ArrayFromString(data)],
-					}
-					const encodedPeer = PBPeer.encode(peer)
-					for(const topic of topics){
-						await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
-					}
-				},
-				members : [this.id],
-				onMembers : () => {},
-				onMembersChange : f => {this.#rooms[room] = {...this.#rooms[room], onMembers: f};this.#rooms[room].onMembers(this.#rooms[room].members);this.#ping()},
-			}
-		}
-		
-		return [
-			this.#rooms[room].sendMessage,
-			this.#rooms[room].listenMessage,
-			this.#rooms[room].onMembersChange
-		]
 	}
 	
 	
