@@ -636,6 +636,13 @@ class webpeerjs{
 			this.#rooms[room].onMembersChange
 		]
 	}
+	
+	dial(addr){
+		let mddrs = []
+		const mddr = multiaddr(addr)
+		mddrs.push(mddr)
+		this.#dialMultiaddress(mddrs)
+	}
 
 
 	/*
@@ -1119,6 +1126,7 @@ class webpeerjs{
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
+				if(!peer)continue
 				const address = peer.Addrs
 				const id = peer.ID
 				let mddrs = []
@@ -1149,6 +1157,7 @@ class webpeerjs{
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
+				if(!peer)continue
 				const address = peer.Addrs
 				const id = peer.ID
 				let mddrs = []
