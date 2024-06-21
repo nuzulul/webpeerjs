@@ -474,7 +474,7 @@ class webpeerjs{
 		this.#libp2p.addEventListener('peer:identify', (evt) => {
 			//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
 			if(evt.detail.protocols.includes(config.CONFIG_PROTOCOL)){
-				//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
+				//console.log('peer:identify '+evt.detail.peerId.toString(),evt)
 				
 				const id = evt.detail.peerId.toString()
 				let address = []
@@ -975,26 +975,27 @@ class webpeerjs{
 			}
 			
 			
-			let peers = []
-			for(const peer of this.#libp2p.getPeers()){
-				peers.push(peer.toString())
-			}
-			
-			
 			//connect to saved best peer address
 			//working great
 			for(const peer of this.#dbstoreData){
 				const id = peer[0]
 				const addr = peer[1]
-				if(peers.includes(id)){
+				if(this.#isConnected(id)){
 					this.#connectionTrackerStore.set(id,0)
 					continue
 				}else{
 					if(this.#connectionTrackerStore.has(id)){
 						let current = this.#connectionTrackerStore.get(id)
-						if(current>10)continue
 						current++
 						this.#connectionTrackerStore.set(id,current)
+						if(current>5){
+							if(!this.#connections.has(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id))
+							{
+								this.#dbstoreData.delete(id)
+								await this.#dbstore.delete(new Key(id))
+							}
+							continue
+						}
 					}
 					else{
 						this.#connectionTrackerStore.set(id,0)
@@ -1009,7 +1010,7 @@ class webpeerjs{
 			//connect to good peer address if it is disconnected
 			const goods = Array.from(this.#dialedGoodPeers.keys())
 			for(const id of goods){
-				if(peers.includes(id)){
+				if(this.#isConnected(id)){
 					this.#dialedGoodPeers.set(id,0)
 					continue
 				}
@@ -1157,7 +1158,10 @@ class webpeerjs{
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
-				if(!peer)continue
+				if(!peer){
+					await this.#dbstore.delete(new Key(target))
+					continue
+				}
 				const address = peer.Addrs
 				const id = peer.ID
 				let mddrs = []
