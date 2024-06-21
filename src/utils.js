@@ -6,6 +6,14 @@ import { Key } from 'interface-datastore'
 
 import { sha256 } from 'multiformats/hashes/sha2'
 
+import { multiaddr } from '@multiformats/multiaddr'
+
+
+
+export { Key }
+
+export { multiaddr }
+
 
 
 const prefix = config.CONFIG_PREFIX
@@ -34,8 +42,6 @@ export async function first(farr){
 			//break
 		}
 }
-
-export {Key}
 
 //Add id to pupsub message
 export async function msgIdFnStrictNoSign(msg){
@@ -142,16 +148,16 @@ export function metrics(data){
 		fail = errors+timeouts
 		const treshold = errors+timeouts+stats.open+stats.pending
 		
-		if(treshold>40){
+		if(treshold>30){
 			//console.log(`Treeshold hit : ${treshold}`)
 		}
 		
-		if(fail>40){
+		if(fail>30){
 			//console.log(`Open : ${stats.open} , Pending : ${stats.pending} , Succes : ${totals.success} , Fail : ${fail} `)
 
 		}
 		
-		if ((fail-lastfailtreshold)>40){
+		if ((fail-lastfailtreshold)>30){
 			if(isDialEnabled){
 				isDialEnabled = false
 				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})

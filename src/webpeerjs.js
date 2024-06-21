@@ -9,7 +9,8 @@ import {
 	msgIdFnStrictNoSign,
 	metrics,
 	getDigest,
-	mkDebug
+	mkDebug,
+	multiaddr
 } from './utils'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
@@ -21,7 +22,6 @@ import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { identify, identifyPush } from '@libp2p/identify'
-import { multiaddr } from '@multiformats/multiaddr'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { simpleMetrics } from '@libp2p/simple-metrics'
@@ -412,7 +412,6 @@ class webpeerjs{
 				//console.log(this.#trackDisconnect)
 				if(count>5){
 					if(this.#dbstoreData.has(id)){
-						//await this.#dbstore.delete(new Key(id))
 						this.#dbstoreData.delete(id)
 					}
 					
@@ -486,8 +485,6 @@ class webpeerjs{
 					}
 				}
 				
-				if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
-
 				if(this.#connectedPeers.has(id)){
 					//reset this last seen
 					const now = new Date().getTime()
@@ -495,6 +492,10 @@ class webpeerjs{
 					this.#connectedPeers.set(id,metadata)
 				}
 				else{
+					
+					
+					if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+						
 					//add to connected webpeers
 					this.#onConnectFn(id)
 					const now = new Date().getTime()
@@ -792,7 +793,7 @@ class webpeerjs{
 	//dial multiaddr address in queue list
 	#dialQueueList(){
 		
-		if(!this.#isDialEnabled)return
+		if(!this.#isDialEnabled || !navigator.onLine)return
 		
 		const mddrsToDial = 5
 		
@@ -960,7 +961,6 @@ class webpeerjs{
 					const addr = remote.toString()
 					const id = peer.toString()
 					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit') && addr.includes('webtransport')){
-						//await this.#dbstore.delete(new Key(id))
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
 					}
@@ -989,10 +989,14 @@ class webpeerjs{
 						current++
 						this.#connectionTrackerStore.set(id,current)
 						if(current>5){
-							if(!this.#connections.has(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id))
+							if(!this.#connections.has(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && navigator.onLine)
 							{
-								this.#dbstoreData.delete(id)
-								await this.#dbstore.delete(new Key(id))
+								setTimeout(async ()=> {
+									if(this.#dbstoreData.has(id) && !this.#connections.has(id)){
+										this.#dbstoreData.delete(id)
+										await this.#dbstore.delete(new Key(id))
+									}
+								},60*1000)
 							}
 							continue
 						}
@@ -1083,6 +1087,10 @@ class webpeerjs{
 	
 	//dial based on known bootsrap peers address
 	#dialKnownBootstrap(){
+
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
 		const bootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
 		for(const peer of bootstrap){
 			const address = peer.Peers[0].Addrs
@@ -1105,6 +1113,10 @@ class webpeerjs{
 	}
 	
 	async #dialSavedKnownID(){
+
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
 		let firsttime = true
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 			if(this.#dbstoreData.has(target)){
@@ -1148,18 +1160,24 @@ class webpeerjs{
 	}
 	
 	async #dialUpdateSavedKnownID(){
+
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
 		let firsttime = true
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 			if(this.#dbstoreData.has(target)){
 				firsttime = false
 			}
-			if(!this.#connections.has(target) && this.#isDialEnabled && (this.#dbstoreData.has(target) || firsttime)){
+			if(!this.#connections.has(target) && (this.#dbstoreData.has(target) || firsttime)){
 				//console.log('#dialUpdateSavedKnownID()',target)
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
 				if(!peer){
-					await this.#dbstore.delete(new Key(target))
+					if (navigator.onLine) {
+						await this.#dbstore.delete(new Key(target))
+					}
 					continue
 				}
 				const address = peer.Addrs
@@ -1184,6 +1202,10 @@ class webpeerjs{
 	
 	//dial based on known peers ID
 	async #dialKnownID(){
+		
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+		
 		//console.log('#dialKnownID()')
 		const api = config.CONFIG_DELEGATED_API
 		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)

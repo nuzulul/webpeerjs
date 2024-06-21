@@ -12,7 +12,7 @@
   },
   "files": [
     "dist/",
-	"src/",
+    "src/",
     "LICENSE"
   ],
   "scripts": {
@@ -20,12 +20,10 @@
     "dev": "vite serve test",
     "eslint": "eslint ./src",
     "eslint:fix": "eslint ./src --fix",
-	
     "removedir": "node -e \"var fs = require('fs'); try{process.argv.slice(1).map((fpath) => fs.rmdirSync(fpath, { recursive: true }))}catch(err){console.log(`Dist not found`)}; process.exit(0);\"",
     "build-all": "tsc -p config/tsconfig-rollup.json && rollup -c temp/config/rollup.config.build.js && echo {\"type\": \"commonjs\"}>dist\\umd\\package.json && echo {\"type\": \"module\"}>dist\\esm\\package.json",
     "build-types": "tsc -p config/tsconfig-esm.json",
     "build": "npm run removedir dist temp && npm run build-all && npm run build-types",
-	
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -36,9 +34,9 @@
     "p2p",
     "ipfs",
     "peer",
-	"peer to peer",
-	"decentralized",
-	"browser to browser"
+    "peer to peer",
+    "decentralized",
+    "browser to browser"
   ],
   "author": {
     "name": "Nuzulul Zulkarnain",
@@ -61,20 +59,19 @@
     "@libp2p/pubsub-peer-discovery": "^10.0.2",
     "@libp2p/simple-metrics": "^1.0.2",
     "@libp2p/webtransport": "^4.0.32",
-    "@multiformats/multiaddr": "^12.2.3",
     "datastore-idb": "^2.1.9",
     "libp2p": "^1.6.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.4.0",
-    "eslint": "^9.4.0",
-    "globals": "^15.3.0",
-    "vite": "^5.2.11",
     "@rollup/plugin-commonjs": "^25.0.8",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
+    "eslint": "^9.4.0",
+    "globals": "^15.3.0",
     "rollup": "^4.18.0",
     "tslib": "^2.6.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
   }
 }

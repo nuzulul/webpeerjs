@@ -1,5 +1,5 @@
 # WebpeerJS
-> Simple peer-to-peer with [IPFS](https://ipfs.tech/). Build completely P2P web applications, no trackers or relay servers involved.
+> Simple peer-to-peer with [IPFS](https://ipfs.tech/). Build completely P2P web applications, no trackers or relay servers required.
 
 WebpeerJS enables browser to browser connectivity without a central server.
 
@@ -9,6 +9,7 @@ WebpeerJS enables browser to browser connectivity without a central server.
 
 * ✅ Decentralized Network
 * ✅ Broadcast Message
+* ✅ Works in The Browser
 
 ## Install
 
@@ -53,9 +54,13 @@ void async function main() {
 
 - `createWebpeer()` Create a new node.
 - `id` The unique ID of the node as an identity in the global network.
-- `joinRoom()` Adding the node to the room, returns an array of three functions (Broadcaster, onListenMessage, onMembersUpdate).
-- `peers` Get all connected peers.
 - `status` Get the node status, returns `connected` or `unconnected`.
+- `peers` Get all connected peers.
+- `joinRoom(namespace)` Join to the room, returns an array of three functions (Broadcaster, onListenBroadcast, onMembersUpdate).
+
+## API Docs
+
+[https://nuzulul.github.io/webpeerjs](https://nuzulul.github.io/webpeerjs)
 
 ## Related
 
@@ -63,6 +68,11 @@ void async function main() {
 - [peerjs](https://github.com/peers/peerjs) - Simple peer-to-peer with WebRTC.
 - [trystero](https://github.com/dmotz/trystero) - Build instant multiplayer webapps, no server required.
 
+## License
+
+MIT
+
 ## Maintainers
 
 [Nuzulul Zulkarnain](https://github.com/nuzulul)
+
