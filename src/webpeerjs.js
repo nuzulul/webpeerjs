@@ -10,7 +10,11 @@ import {
 	metrics,
 	getDigest,
 	mkDebug,
-	multiaddr
+	multiaddr,
+	pipe,
+	lpStream,
+	lp,
+	map
 } from './utils'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
@@ -84,6 +88,9 @@ class webpeerjs{
 	//message tracker avoid double
 	#msgIdtracker
 	
+	//map of peer exchange data
+	#peerexchangedata
+	
 	id
 	status
 	IPFS
@@ -112,6 +119,7 @@ class webpeerjs{
 		this.#dialQueue = []
 		this.#isDialEnabled = true
 		this.#msgIdtracker = []
+		this.#peerexchangedata = new Map()
 		
 		this.peers = (function(f) {
 			return f
@@ -477,11 +485,14 @@ class webpeerjs{
 				
 				const id = evt.detail.peerId.toString()
 				let address = []
+				let mddrs = []
 				
 				for(const addrs of evt.detail.listenAddrs){
 					const addr = addrs.toString()+'/p2p/'+id
+					const mddr = multiaddr(addr)
 					if(addr.includes('webtransport')){
 						address.push(addr)
+						mddrs.push(mddr)
 					}
 				}
 				
@@ -491,18 +502,11 @@ class webpeerjs{
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata)
 				}
-				else{
-					
-					
-					if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
-						
-					//add to connected webpeers
-					this.#onConnectFn(id)
-					const now = new Date().getTime()
-					const metadata = {addrs:address,last:now}
-					this.#connectedPeers.set(id,metadata)
-					this.#updatePeers()
-				}
+				
+				
+				const command = 'peer-exchange'
+				this.#dialProtocol(id,command)
+				
 
 			}
 		})
@@ -665,13 +669,88 @@ class webpeerjs{
 	}
 	
 	async #registerProtocol(){
-		const handler = ({ connection, stream, protocol }) => {
-		  // use stream or connection according to the needs
+		
+		const handler = async ({ connection, stream, protocol }) => {
+			try{
+				const output = await pipe(
+					stream.source,
+					(source) => lp.decode(source),
+					(source) => map(source, (buf) => uint8ArrayToString(buf.subarray())),
+					async function (source) {
+					  let string = ''
+					  for await (const msg of source) {
+						string += msg.toString()
+					  }
+					  return string
+					}
+				)
+				
+				//console.log('question : '+connection.remotePeer.toString(),output)
+				
+				const id = connection.remotePeer.toString()
+				
+				let json = JSON.parse(output)
+
+				let jsonMessage = {
+						protocol:config.CONFIG_PROTOCOL,
+						command:null,
+						data:null
+				}
+				
+				if(json.command === 'peer-exchange'){
+					if(json.protocol == config.CONFIG_PROTOCOL){
+						const address = [connection.remoteAddr.toString()]
+						if(this.#connectedPeers.has(id)){
+							//reset this last seen
+							const now = new Date().getTime()
+							const metadata = {addrs:address,last:now}
+							this.#connectedPeers.set(id,metadata)
+						}
+						else{
+							if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+								
+							//add to connected webpeers
+							this.#onConnectFn(id)
+							const now = new Date().getTime()
+							const metadata = {addrs:address,last:now}
+							this.#connectedPeers.set(id,metadata)
+							this.#updatePeers()
+						}
+					}
+					if(json.data != null){
+						this.#peerexchangedata.set(id,json.data)
+						let mddrs = []
+						const mddr = multiaddr(json.data.addr)
+						mddrs.push(mddr)
+						this.#dialMultiaddress(mddrs)
+					}
+					const keys = Array.from(this.#dbstoreData.keys())
+					const randomKey = Math.floor(Math.random() * keys.length)
+					const key = keys[randomKey]
+					const addr = this.#dbstoreData.get(key)
+					
+					jsonMessage.command = json.command
+					jsonMessage.data = {id:key,addr}	
+				}
+				
+				const message = JSON.stringify(jsonMessage)
+				
+				pipe(
+					message,
+					(source) => map(source, (string) => uint8ArrayFromString(string)),
+					(source) => lp.encode(source),
+					stream.sink
+				)
+			}
+			catch(err){
+				//console.warn(err)
+			}
 		}
 
 		await this.#libp2p.handle(config.CONFIG_PROTOCOL, handler, {
-		  maxInboundStreams: 5,
-		  maxOutboundStreams: 5
+		  maxInboundStreams: 50,
+		  maxOutboundStreams: 50,
+		  runOnTransientConnection:true
 		})
 
 		await this.#libp2p.register(config.CONFIG_PROTOCOL, {
@@ -685,6 +764,95 @@ class webpeerjs{
 		  }
 		})
 
+	}
+	
+	async #dialProtocol(id,command){
+
+		const connections = this.#libp2p.getConnections().map((con)=>{return {id:con.remotePeer.toString(),addr:con.remoteAddr.toString()}})
+		const connect = connections.find((con)=>con.id == id)
+		const addr = connect.addr
+		const mddr = multiaddr(addr)
+		
+		let jsonMessage = {
+				protocol:config.CONFIG_PROTOCOL,
+				command:null,
+				data:null
+		}
+		
+		if(command === 'peer-exchange'){
+			
+			if(this.#peerexchangedata.has(id))return
+			
+			const keys = Array.from(this.#dbstoreData.keys())
+			const randomKey = Math.floor(Math.random() * keys.length)
+			const key = keys[randomKey]
+			const addr = this.#dbstoreData.get(key)
+			
+			jsonMessage.command = command
+			jsonMessage.data = {id:key,addr}
+		}
+		
+		const message = JSON.stringify(jsonMessage)
+		
+		//console.log(connections)
+		//return
+
+		try{
+			
+			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnTransientConnection:true})
+			
+			const output = await pipe(
+				message,
+				(source) => map(source, (string) => uint8ArrayFromString(string)),
+				(source) => lp.encode(source),
+				stream,
+				(source) => lp.decode(source),
+				(source) => map(source, (buf) => uint8ArrayToString(buf.subarray())),
+				async function (source) {
+				  let string = ''
+				  for await (const msg of source) {
+					string += msg.toString()
+				  }
+				  return string
+				}
+			)
+			
+			//console.log('answer : '+id,output)
+			
+			const json = JSON.parse(output)
+			if(json.protocol == config.CONFIG_PROTOCOL){
+				const address = [addr]
+				if(this.#connectedPeers.has(id)){
+					//reset this last seen
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata)
+				}
+				else{
+					if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+						
+					//add to connected webpeers
+					this.#onConnectFn(id)
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata)
+					this.#updatePeers()
+				}
+			}
+			if(json.command == 'peer-exchange'){
+				if(json.data != null){
+					this.#peerexchangedata.set(id,json.data)
+					let mddrs = []
+					const mddr = multiaddr(json.data.addr)
+					mddrs.push(mddr)
+					this.#dialMultiaddress(mddrs)
+					//console.log(json.data.id)
+				}
+			}
+		}
+		catch(err){
+			//console.warn(err)
+		}
 	}
 	
 	#findHybridPeer(){

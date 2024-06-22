@@ -1,19 +1,24 @@
 import * as config from  './config'
-
 import { Peer as PBPeer } from './peer'
-
 import { Key } from 'interface-datastore'
-
 import { sha256 } from 'multiformats/hashes/sha2'
-
 import { multiaddr } from '@multiformats/multiaddr'
-
-
+import { pipe } from 'it-pipe'
+import { lpStream } from 'it-length-prefixed-stream'
+import * as lp from 'it-length-prefixed'
+import map from 'it-map'
 
 export { Key }
 
 export { multiaddr }
 
+export { pipe }
+
+export { lpStream }
+
+export { lp }
+
+export { map }
 
 
 const prefix = config.CONFIG_PREFIX
