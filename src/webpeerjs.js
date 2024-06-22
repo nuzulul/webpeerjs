@@ -151,7 +151,7 @@ class webpeerjs{
 			const connect = connections.find((con)=>con.id == id)
 			const addr = connect.addr
 
-			if(config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id)){
 				if(!this.#connections.has(id)&&addr.includes('webtransport')){
 					await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 				}
@@ -418,7 +418,7 @@ class webpeerjs{
 				count++
 				this.#trackDisconnect.set(id,count)
 				//console.log(this.#trackDisconnect)
-				if(count>5){
+				if(count>10){
 					if(this.#dbstoreData.has(id)){
 						this.#dbstoreData.delete(id)
 					}
@@ -432,6 +432,11 @@ class webpeerjs{
 				this.#trackDisconnect.set(id,0)
 			}
 			
+			let peerexchangelist = []
+			for(const peer of this.#peerexchangedata.values()){
+				peerexchangelist.push(peer.id)
+			}
+			
 			//if this disconnected peer is web peer redial it
 			if(this.#webPeersId.includes(id)){
 				const addr = this.#connections.get(id)
@@ -443,6 +448,14 @@ class webpeerjs{
 			
 			//if this disconnected peer is known bootstrap redial it
 			else if(this.#dialedKnownBootstrap.has(id)){
+				const addr = this.#connections.get(id)
+				let mddrs = []
+				const addrs = multiaddr(addr)
+				mddrs.push(addrs)
+				this.#dialMultiaddress(mddrs)
+			}
+
+			else if(peerexchangelist.includes(id)){
 				const addr = this.#connections.get(id)
 				let mddrs = []
 				const addrs = multiaddr(addr)
@@ -685,8 +698,6 @@ class webpeerjs{
 					}
 				)
 				
-				//console.log('question : '+connection.remotePeer.toString(),output)
-				
 				const id = connection.remotePeer.toString()
 				
 				let json = JSON.parse(output)
@@ -698,6 +709,7 @@ class webpeerjs{
 				}
 				
 				if(json.command === 'peer-exchange'){
+					
 					if(json.protocol == config.CONFIG_PROTOCOL){
 						const address = [connection.remoteAddr.toString()]
 						if(this.#connectedPeers.has(id)){
@@ -717,13 +729,21 @@ class webpeerjs{
 							this.#updatePeers()
 						}
 					}
+					
 					if(json.data != null){
 						this.#peerexchangedata.set(id,json.data)
 						let mddrs = []
-						const mddr = multiaddr(json.data.addr)
-						mddrs.push(mddr)
+						const dataaddr = json.data.addr
+						const datamddr = multiaddr(dataaddr)
+						const dataid = json.data.id
+						mddrs.push(datamddr)
 						this.#dialMultiaddress(mddrs)
+						if(!this.#dbstoreData.has(dataid)){
+							//await this.#dbstore.put(new Key(dataid), new TextEncoder().encode(dataaddr))
+							//this.#dbstoreData.set(dataid,dataaddr)
+						}
 					}
+					
 					const keys = Array.from(this.#dbstoreData.keys())
 					const randomKey = Math.floor(Math.random() * keys.length)
 					const key = keys[randomKey]
@@ -734,6 +754,7 @@ class webpeerjs{
 				}
 				
 				const message = JSON.stringify(jsonMessage)
+				//console.log('answer message '+id,message)
 				
 				pipe(
 					message,
@@ -792,10 +813,8 @@ class webpeerjs{
 			jsonMessage.data = {id:key,addr}
 		}
 		
-		const message = JSON.stringify(jsonMessage)
-		
-		//console.log(connections)
-		//return
+		const message = JSON.stringify(jsonMessage)		
+		//console.log('ask message '+id,message)
 
 		try{
 			
@@ -816,8 +835,6 @@ class webpeerjs{
 				  return string
 				}
 			)
-			
-			//console.log('answer : '+id,output)
 			
 			const json = JSON.parse(output)
 			if(json.protocol == config.CONFIG_PROTOCOL){
@@ -843,10 +860,15 @@ class webpeerjs{
 				if(json.data != null){
 					this.#peerexchangedata.set(id,json.data)
 					let mddrs = []
-					const mddr = multiaddr(json.data.addr)
-					mddrs.push(mddr)
+					const dataaddr = json.data.addr
+					const datamddr = multiaddr(dataaddr)
+					const dataid = json.data.id
+					mddrs.push(datamddr)
 					this.#dialMultiaddress(mddrs)
-					//console.log(json.data.id)
+					if(!this.#dbstoreData.has(dataid)){
+						//await this.#dbstore.put(new Key(dataid), new TextEncoder().encode(dataaddr))
+						//this.#dbstoreData.set(dataid,dataaddr)
+					}
 				}
 			}
 		}
@@ -1128,7 +1150,7 @@ class webpeerjs{
 				if(besttime>bestlimit){
 					const addr = remote.toString()
 					const id = peer.toString()
-					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && !this.#dbstoreData.get(id) && !addr.includes('p2p-circuit') && addr.includes('webtransport')){
+					if(!this.#webPeersId.includes(id) && !config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) && !this.#dbstoreData.has(id) && !addr.includes('p2p-circuit') && addr.includes('webtransport')){
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
 					}
