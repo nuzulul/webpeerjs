@@ -1,12 +1,12 @@
 {
   "name": "webpeerjs",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Simple peer-to-peer with IPFS",
   "main": "./dist/umd/webpeerjs.js",
-  "module": "./dist/esm/webpeerjs.js",
+  "module": "./src/webpeerjs.js",
   "exports": {
     ".": {
-      "import": "./dist/esm/webpeerjs.js",
+      "import": "./src/webpeerjs.js",
       "require": "./dist/umd/webpeerjs.js"
     }
   },

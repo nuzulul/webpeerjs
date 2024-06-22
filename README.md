@@ -19,7 +19,7 @@ NPM :
 npm i webpeerjs
 ```
 
-CDN :
+Browser `<script>` tag :
 
 ```
 <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.0/dist/umd/webpeerjs.min.js"></script>
