@@ -963,11 +963,23 @@ class webpeerjs{
 			
 			const id = mddrs[0].toString().split('/').pop()
 			
-			const ids = this.#dialQueue.map((arr)=> arr[0].toString().split('/').pop())
+			const queueids = this.#dialQueue.map((arr)=> arr[0].toString().split('/').pop())
 			
 			//if peer id is already in the queque cancel queque
-			if(ids.includes(id)){
+			if(queueids.includes(id)){
 				return
+			}
+			
+			const webPeerCount = this.#connectedPeers.size
+			const allPeerCount = this.#libp2p.getPeers().length
+			const nodePeerCount = allPeerCount - webPeerCount
+			const limitCount = config.CONFIG_MAX_CONNECTIONS / 2
+			
+			if(this.#webPeersId.includes(id)){
+				if(webPeerCount>limitCount)return
+			}
+			else{
+				if(nodePeerCount>limitCount)return
 			}
 			
 			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
