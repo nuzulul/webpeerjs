@@ -8,6 +8,7 @@ WebpeerJS enables browser to browser connectivity without a central server. Conn
 ## Features
 
 * ✅ Decentralized Network
+* ✅ Unlimited Peers
 * ✅ Works in The Browser
 * ✅ Broadcast Message
 
@@ -38,7 +39,7 @@ void async function main() {
 	
 	console.log(`My node id : ${node.id}`)
 	
-	const [broadcast,listen,members] = node.joinRoom('myroom')
+	const [broadcast,listen,members] = node.joinRoom('globalroom')
 	
 	listen((message,id) => {
 		console.log(`Message from ${id} : ${message}`)
