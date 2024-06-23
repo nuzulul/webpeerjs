@@ -1,15 +1,15 @@
 # WebpeerJS
-> Simple peer-to-peer with [IPFS](https://ipfs.tech/). Build completely P2P web applications, no trackers or relay servers required.
+> Simple peer-to-peer in the browser. Build completely P2P web applications, no trackers or relay servers required.
 
-WebpeerJS enables browser to browser connectivity without a central server.
+WebpeerJS enables browser to browser connectivity without a central server. Connecting people safely, privately, openly and reliably.
 
 [Live Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
 ## Features
 
 * ✅ Decentralized Network
-* ✅ Broadcast Message
 * ✅ Works in The Browser
+* ✅ Broadcast Message
 
 ## Install
 
@@ -20,6 +20,8 @@ npm i webpeerjs
 ```
 
 Browser `<script>` tag :
+
+Uses built-in JS files from [latest release](https://github.com/nuzulul/webpeerjs/releases/latest) or [CDN](https://www.jsdelivr.com/package/npm/webpeerjs) will make it's exports available as `webpeerjs` in the global namespace.
 
 ```
 <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.0/dist/umd/webpeerjs.min.js"></script>
