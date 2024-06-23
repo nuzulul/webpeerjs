@@ -1,8 +1,5 @@
-/* eslint-disable import/export */
-/* eslint-disable complexity */
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
-/* eslint-disable @typescript-eslint/no-empty-interface */
+//this code comes from https://github.com/libp2p/js-libp2p-pubsub-peer-discovery/blob/9d0da565f70e9b2403251c9d11dfc0b9b52babfa/src/peer.ts
+
 import { decodeMessage, encodeMessage, message } from 'protons-runtime';
 import { alloc as uint8ArrayAlloc } from 'uint8arrays/alloc';
 export var Peer;

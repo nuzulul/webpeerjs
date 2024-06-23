@@ -20,6 +20,7 @@ import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-
 import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
 import { webTransport } from '@libp2p/webtransport'
+import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
@@ -152,7 +153,7 @@ class webpeerjs{
 			const addr = connect.addr
 
 			if(config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id)){
-				if(!this.#connections.has(id)&&addr.includes('webtransport')){
+				if((!this.#connections.has(id) || (this.#connections.get(id).includes('/wss/')))&&addr.includes('webtransport')){
 					await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 				}
 			}
@@ -449,6 +450,7 @@ class webpeerjs{
 			//if this disconnected peer is known bootstrap redial it
 			else if(this.#dialedKnownBootstrap.has(id)){
 				const addr = this.#connections.get(id)
+				if(addr.includes('/wss/'))return
 				let mddrs = []
 				const addrs = multiaddr(addr)
 				mddrs.push(addrs)
@@ -491,8 +493,29 @@ class webpeerjs{
 			this.#ping()
 		})
 		
-		this.#libp2p.addEventListener('peer:identify', (evt) => {
+		this.#libp2p.addEventListener('peer:identify', async (evt) => {
 			//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
+			
+			const id = evt.detail.peerId.toString()
+			
+			if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC_IDS.includes(id)){
+				const remoteAddr = evt.detail.connection.remoteAddr.toString()
+				if(remoteAddr.includes('/wss/')){
+					 let addrs = []
+					 let mddrs = []
+					 for(const peer of evt.detail.listenAddrs){
+						 if(!peer.toString().includes('webtransport'))continue
+						 const addr = peer.toString()+'/p2p/'+id
+						 const mddr = multiaddr(addr)
+						 addrs.push(addr)
+						 mddrs.push(mddr)
+					 }
+					 this.#dialedKnownBootstrap.set(id,addrs)
+					 await this.#libp2p.hangUp(peerIdFromString(id))
+					 this.#dialMultiaddress(mddrs)
+				}
+			}
+			
 			if(evt.detail.protocols.includes(config.CONFIG_PROTOCOL)){
 				//console.log('peer:identify '+evt.detail.peerId.toString(),evt)
 				
@@ -877,37 +900,39 @@ class webpeerjs{
 		}
 	}
 	
-	#findHybridPeer(){
-		setTimeout(async()=>{
-			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
-				if(!this.#isConnected(target) && !this.#connections.has(target) && this.#isDialEnabled ){
-					//console.log('findPeer',target)
-					const peerId = peerIdFromString(target)
-					//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
+	async #findHybridPeer(){
 
-					//console.info(peerInfo)
-					for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
-						//console.info('findPeer',event)
-						if (event.name === 'FINAL_PEER'){
-							//console.log(event.peer.id.toString(),event.peer.multiaddrs.toString())
-							let mddrs = []
-							let addrs = []
-							const id = event.peer.id.toString()
-							for(const mddr of event.peer.multiaddrs){
-								const peeraddr = mddr.toString()+'/p2p/'+id
-								const peermddr = multiaddr(peeraddr)
-								addrs.push(peeraddr)
-								mddrs.push(peermddr)
-							}
-							this.#dialedKnownBootstrap.set(id,addrs)
-							if(!this.#isConnected(id)){
-								this.#dialMultiaddress(mddrs)
-							}
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
+			if(!this.#isConnected(target) && !this.#connections.has(target)){
+				//console.log('findPeer',target)
+				const peerId = peerIdFromString(target)
+				//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
+
+				//console.info(peerInfo)
+				for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
+					//console.info('findPeer',event)
+					if (event.name === 'FINAL_PEER'){
+						//console.log(event.peer.id.toString(),event.peer.multiaddrs.toString())
+						let mddrs = []
+						let addrs = []
+						const id = event.peer.id.toString()
+						for(const mddr of event.peer.multiaddrs){
+							const peeraddr = mddr.toString()+'/p2p/'+id
+							const peermddr = multiaddr(peeraddr)
+							addrs.push(peeraddr)
+							mddrs.push(peermddr)
+						}
+						this.#dialedKnownBootstrap.set(id,addrs)
+						if(!this.#isConnected(id)){
+							this.#dialMultiaddress(mddrs)
 						}
 					}
 				}
 			}
-		},60e3)
+		}
 	}
 	
 	
@@ -1251,67 +1276,45 @@ class webpeerjs{
 			if(peers == 0){
 				this.#dialKnownPeers()
 			}
-		},60*1000)
+		},120*1000)
 	}
 	
 	
 	//dial to all known bootstrap peers and DNS
 	#dialKnownPeers(){
-		//this.#dialKnownBootstrap()
 		setTimeout(()=>{
 			this.#dialSavedKnownID()
-			this.#findHybridPeer()
 			setTimeout(()=>{this.#dialUpdateSavedKnownID()},50000)
+			setTimeout(()=>{this.#findHybridPeer()},60000)
 			setTimeout(()=>{
 				const peers = this.#libp2p.getPeers().length
 				if(peers == 0){
 					this.#dialKnownID()
-					this.#findHybridPeer()
+					setTimeout(()=>{this.#findHybridPeer()},60000)
 					setTimeout(()=>{
 						const peers = this.#libp2p.getPeers().length
 						if(peers == 0){
-							//currently not needed
-							//this.#dialKnownDNS()
+							this.#dialKnownBootstrap()
+							setTimeout(()=>{this.#findHybridPeer()},15000)
 							setTimeout(()=>{
 								const peers = this.#libp2p.getPeers().length
 								if(peers == 0){
-									//currently not needed
-									//this.#dialKnownDNSonly()
+									this.#dialKnownDNS()
+									setTimeout(()=>{this.#findHybridPeer()},15000)
+									setTimeout(()=>{
+										const peers = this.#libp2p.getPeers().length
+										if(peers == 0){
+											this.#dialKnownDNSonly()
+											setTimeout(()=>{this.#findHybridPeer()},15000)
+										}
+									},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
 								}
-							},15000)
+							},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
 						}
-					},15000)
+					},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
 				}
-			},15000)
+			},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
 		},5000)
-	}
-	
-	
-	//dial based on known bootsrap peers address
-	#dialKnownBootstrap(){
-
-		if(!navigator.onLine)return
-		if(!this.#isDialEnabled)return
-
-		const bootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
-		for(const peer of bootstrap){
-			const address = peer.Peers[0].Addrs
-			const id = peer.Peers[0].ID
-			let mddrs = []
-			let addrs = []
-			for(const addr of address){
-				const peeraddr = addr+'/p2p/'+id
-				const peermddr = multiaddr(peeraddr)
-				addrs.push(peeraddr)
-				mddrs.push(peermddr)
-			}
-			
-			this.#dialedKnownBootstrap.set(id,addrs)
-			if(!this.#isConnected(id)){
-				this.#dialMultiaddress(mddrs)
-			}
-			
-		}
 	}
 	
 	async #dialSavedKnownID(){
@@ -1434,10 +1437,43 @@ class webpeerjs{
 			}
 		}
 	}
-	
+
+
+	//dial based on known bootsrap peers address using Websocket expected
+	#dialKnownBootstrap(){
+		
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
+		const bootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
+		for(const peer of bootstrap){
+			const address = peer.Peers[0].Addrs
+			const id = peer.Peers[0].ID
+			let mddrs = []
+			let addrs = []
+			for(const addr of address){
+				if(!addr.includes('wss'))continue
+				const peeraddr = addr+'/p2p/'+id
+				const peermddr = multiaddr(peeraddr)
+				addrs.push(peeraddr)
+				mddrs.push(peermddr)
+			}
+			
+			this.#dialedKnownBootstrap.set(id,addrs)
+			this.#isDialWebsocket = true
+			if(!this.#isConnected(id)){
+				this.#dialMultiaddress(mddrs)
+			}
+			
+		}
+	}	
 	
 	//dial based on known bootstrap DNS
-	/*async #dialKnownDNS(){
+	async #dialKnownDNS(){
+
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const bootstrapdns = config.CONFIG_KNOWN_BOOTSTRAP_DNS
 		const response = await fetch(dnsresolver+'?name='+bootstrapdns+'&type=txt')
@@ -1466,16 +1502,21 @@ class webpeerjs{
 			}
 			
 			this.#dialedKnownBootstrap.set(id,addrs)
+			this.#isDialWebsocket = true
 			if(!this.#isConnected(id)){
 				this.#dialMultiaddress(mddrs)
 			}
 		}
 		
-	}*/
+	}
 	
 	
 	//dial based on known bootstrap DNS using DNS resolver only
-	/*async #dialKnownDNSonly(){
+	async #dialKnownDNSonly(){
+
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const bootstrapdns = config.CONFIG_KNOWN_BOOTSTRAP_DNS
 		const response = await fetch(dnsresolver+'?name='+bootstrapdns+'&type=txt')
@@ -1488,11 +1529,11 @@ class webpeerjs{
 			const dnsaddr = '_dnsaddr.'+arr[2]
 			this.#dialDNSWebsocketWebtransport(id,dnsaddr)
 		}
-	}*/
+	}
 	
 	
 	//dial DNS with webtransport and websocket
-	/*async #dialDNSWebsocketWebtransport(id,dnsaddr){
+	async #dialDNSWebsocketWebtransport(id,dnsaddr){
 		const dnsresolver = config.CONFIG_DNS_RESOLVER
 		const response = await fetch(dnsresolver+'?name='+dnsaddr+'&type=txt')
 		const json = await response.json()
@@ -1516,41 +1557,34 @@ class webpeerjs{
 			this.#dialMultiaddress(mddrs)
 			this.#dialWebsocket(mddrs)
 		}
-	}*/
+	}
 	
 	
 	//dial only webtransport multiaddrs
 	async #dialWebtransport(multiaddrs){
 			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('webtransport')&&maddr.protoNames().includes('certhash'))
-			  for (const addr of webTransportMadrs) {
+			  for (const mddr of webTransportMadrs) {
 				try {
-				  //console.log(`attempting to dial webtransport multiaddr: %o`, addr.toString())
-				  await this.#libp2p.dial(addr)
+				  //console.log(`attempting to dial webtransport multiaddr: %o`, mddr.toString())
+				  await this.#libp2p.dial(mddr)
 				  return // if we succeed dialing the peer, no need to try another address
 				} catch (error) {
-				  //console.log(`failed to dial webtransport multiaddr: %o`, addr.toString())
+				  //console.log(`failed to dial webtransport multiaddr: %o`, mddr.toString())
 				  mkDebug(error)
 				}
 			  }
 	}
-
-	//dial only webtransport multiaddrs
-	/*#dialWebtransport1(multiaddrs){
-			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('webtransport')&&maddr.protoNames().includes('certhash'))
-			if(webTransportMadrs.length == 0)return
-			this.#libp2p.dial(webTransportMadrs).then((data)=>{console.warn(data)},(data)=>{console.warn(data)})
-	}*/
 	
 	//dial only websocket multiaddrs
 	async #dialWebsocket(multiaddrs){
 			const webSocketMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('wss'))
-			  for (const addr of webSocketMadrs) {
+			  for (const mddr of webSocketMadrs) {
 				try {
-				  //console.log(`attempting to dial websocket multiaddr: %o`, addr)
-				  await this.#libp2p.dial(addr)
+				  //console.log(`attempting to dial websocket multiaddr: %o`, mddr)
+				  await this.#libp2p.dial(mddr)
 				  return // if we succeed dialing the peer, no need to try another address
 				} catch (error) {
-				  //console.log(`failed to dial websocket multiaddr: %o`, addr)
+				  //console.log(`failed to dial websocket multiaddr: %o`, mddr)
 				  mkDebug(error)
 				}
 			  }
@@ -1591,7 +1625,8 @@ class webpeerjs{
 				],
 			},
 			transports:[
-				webTransport(),		
+				webTransport(),
+				webSockets(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 					reservationConcurrency: 1,
