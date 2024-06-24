@@ -1,16 +1,16 @@
 # WebpeerJS
-> Simple peer-to-peer in the browser.
+> Simple peer-to-peer communication between applications in browser.
 
-Build completely P2P web applications, no trackers or relay servers required. [WebpeerJS](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Connecting people safely, privately, openly and reliably.
+Build completely P2P web applications, no trackers or relay servers required. [WebpeerJS](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Connecting people safely, privately, openly and reliably. Let's create a next generation internet that is fair, free and open.
 
-[Live Demo](https://nuzulul.github.io/webpeerjs/demo/)
+[Basic Connection Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
 ## Features
 
-* ✅ Decentralized Network
+* ✅ Decentralized P2P
 * ✅ Unlimited Peers
-* ✅ Works in The Browser
-* ✅ Broadcast Message / Room
+* ✅ Works in Browsers
+* ✅ Broadcast Message
 
 ## Install
 
@@ -55,21 +55,15 @@ void async function main() {
 
 ## API
 
-- `createWebpeer()` Create a new node.
-- `id` The unique ID of the node as an identity in the global network.
-- `status` Get the node status, returns `connected` or `unconnected`.
-- `peers` Get all connected peers.
-- `joinRoom(namespace)` Join to the room, returns an array of three functions (Broadcaster, onListenBroadcast, onMembersUpdate).
+- `createWebpeer()` - Create a new node.
+- `id` - The unique ID of the node as an identity in the global network.
+- `status` - Get the node status, returns `connected` or `unconnected`.
+- `peers` - Get all connected peers.
+- `joinRoom(namespace)` - Join to the room, returns an array of three functions (Broadcaster, onListenBroadcast, onMembersUpdate).
 
 ## API Docs
 
 [https://nuzulul.github.io/webpeerjs](https://nuzulul.github.io/webpeerjs)
-
-## Related
-
-- [simple-peer](https://github.com/feross/simple-peer) - Simple WebRTC video, voice, and data channels.
-- [peerjs](https://github.com/peers/peerjs) - Simple peer-to-peer with WebRTC.
-- [trystero](https://github.com/dmotz/trystero) - Build instant multiplayer webapps, no server required.
 
 ## License
 
