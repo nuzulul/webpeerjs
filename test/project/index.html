@@ -2,12 +2,46 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite App</title>
+    <title>WebpeerJS</title>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/main.js"></script>
+    <h3>Basic Connection Demo of <a href="https://github.com/nuzulul/webpeerjs">WebpeerJS</a></h3>
+	<div id="app"><ul id="myList"></ul></div>
+
+	<script type="module">
+    
+        import { webpeerjs } from 'webpeerjs'
+        
+		void async function main() {
+
+			function write(input){
+				const node = document.createElement("li")
+				const textnode = document.createTextNode(input)
+				node.appendChild(textnode)
+				document.getElementById("myList").appendChild(node)
+			}
+
+			const node = await webpeerjs.createWebpeer()
+			
+			write(`My node id : ${node.id}`)
+			
+			const room = 'myroom'
+			
+			write(`joinRoom : ${room}`)
+			
+			const [broadcast,listen,members] = node.joinRoom(room)
+			
+			listen((message,id) => {
+				write(`Message from ${id} : ${message}`)
+			})
+			
+			members((data) => {
+				write(`Members update : ${data}`)
+				broadcast('hello')
+			})
+			
+		}()
+	</script>
   </body>
 </html>

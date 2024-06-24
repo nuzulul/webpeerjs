@@ -327,13 +327,18 @@ class webpeerjs{
 							}
 							
 							if(rooms){
-								for(const room of Object.keys(this.#rooms)){
-									//update room members
-									if(!this.#rooms[room].members.includes(id)){
-										if(this.#connectedPeers.has(id)){
-											this.#rooms[room].members.push(id)
-											this.#rooms[room].onMembers(this.#rooms[room].members)
+								for(const room of rooms){
+									
+									if(this.#rooms[room]){
+										
+										//update room members
+										if(!this.#rooms[room].members.includes(id)){
+											if(this.#connectedPeers.has(id)){
+												this.#rooms[room].members.push(id)
+												this.#rooms[room].onMembers(this.#rooms[room].members)
+											}
 										}
+										
 									}
 								}
 							}
@@ -1072,7 +1077,7 @@ class webpeerjs{
 	//announce and ping via pupsub peer discovery
 	async #announce(){
 			const topics = config.CONFIG_PUPSUB_PEER_DATA
-			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address,rooms:this.#rooms})
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address,rooms:Object.keys(this.#rooms)})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
 			  addrs: [uint8ArrayFromString(data)],
@@ -1084,7 +1089,7 @@ class webpeerjs{
 	}
 	async #ping(){
 			const topics = config.CONFIG_PUPSUB_PEER_DATA
-			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address,rooms:this.#rooms})
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address,rooms:Object.keys(this.#rooms)})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
 			  addrs: [uint8ArrayFromString(data)],
