@@ -12,9 +12,14 @@ Build completely P2P web applications, no trackers or relay servers required. [W
 * ✅ Works in Browsers
 * ✅ Broadcast Message
 
-## Install
+## Quickstart
 
-NPM :
+Try now in [Playground](https://jsbin.com/suwesaliro/1/edit?html,output) :
+```
+https://jsbin.com/suwesaliro/1/edit?html,output
+```
+
+NPM install:
 
 ```
 npm i webpeerjs
