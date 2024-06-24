@@ -1,5 +1,6 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import terser from '@rollup/plugin-terser';
 
 export default [
 {
@@ -9,7 +10,8 @@ export default [
       file: 'dist/esm/webpeerjs.js',
       format: 'es',
     }
-  ]
+  ],
+  plugins: [nodeResolve({browser: true}), commonjs(),terser()]
 },
 {
   input: 'src/umd.js',
@@ -20,6 +22,6 @@ export default [
       name: 'webpeerjs',
     }
   ],
-  plugins: [nodeResolve({browser: true}), commonjs()]
+  plugins: [nodeResolve({browser: true}), commonjs(),terser()]
 }
 ]

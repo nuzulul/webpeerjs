@@ -1,3 +1,4 @@
+//! WebpeerJS -- https://github.com/nuzulul/webpeerjs
 const prefix = 'webpeerjs'
 export const CONFIG_PREFIX = prefix
 export const CONFIG_PROTOCOL = '/'+prefix+'/1.0.0'

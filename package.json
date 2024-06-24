@@ -24,8 +24,8 @@
     "removedir": "node -e \"var fs = require('fs'); try{process.argv.slice(1).map((fpath) => fs.rmdirSync(fpath, { recursive: true }))}catch(err){console.log(`Dist not found`)}; process.exit(0);\"",
     "build-all": "tsc -p config/tsconfig-rollup.json && rollup -c temp/config/rollup.config.build.js && echo {\"type\": \"commonjs\"}>dist\\umd\\package.json && echo {\"type\": \"module\"}>dist\\esm\\package.json",
     "build-types": "tsc -p config/tsconfig-esm.json",
-    "build": "npm run removedir dist temp && npm run build-all && npm run build-types",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run removedir dist temp && npm run build-all",
+    "test": "cd test && cd project && npm start"
   },
   "repository": {
     "type": "git",
@@ -70,6 +70,7 @@
     "@eslint/js": "^9.4.0",
     "@rollup/plugin-commonjs": "^25.0.8",
     "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
     "eslint": "^9.4.0",
     "globals": "^15.3.0",
