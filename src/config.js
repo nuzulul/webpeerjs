@@ -11,6 +11,7 @@ export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectiv
 export const CONFIG_PEER_DISCOVERY_GLOBAL = '_peer-discovery._p2p._pubsub'
 export const CONFIG_PEER_DISCOVERY_WEBPEERJS= prefix+'-peer-discovery'
 export const CONFIG_PUBSUB_PEER_DISCOVERY = [CONFIG_PEER_DISCOVERY_GLOBAL, CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY, CONFIG_PEER_DISCOVERY_WEBPEERJS]
+export const CONFIG_PUPSUB_PEER_DATA = ['_'+prefix+'-peer-data_']
 export const CONFIG_PUPSUB_TOPIC = prefix+'-room'
 export const CONFIG_DELEGATED_API = 'https://delegated-ipfs.dev'
 export const CONFIG_DNS_RESOLVER = 'https://dns.google/resolve'

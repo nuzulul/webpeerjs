@@ -21,6 +21,8 @@ import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
 import { webTransport } from '@libp2p/webtransport'
 import { webSockets } from '@libp2p/websockets'
+import { webRTC } from '@libp2p/webrtc'
+import { dcutr } from '@libp2p/dcutr'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
@@ -139,6 +141,10 @@ class webpeerjs{
 		
 		this.id = this.#libp2p.peerId.toString()
 		
+		for(const topic of config.CONFIG_PUPSUB_PEER_DATA){
+			this.#libp2p.services.pubsub.subscribe(topic)
+		}
+		
 		
 		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect",async (evt) => {
@@ -207,7 +213,7 @@ class webpeerjs{
 			if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 				const topic = event.detail.topic
 				const senderPeerId = event.detail.from.toString()
-				if(config.CONFIG_PUBSUB_PEER_DISCOVERY.includes(topic)){
+				
 					try{
 						
 						//if it is webpeer 
@@ -243,15 +249,17 @@ class webpeerjs{
 									const addrs = this.#discoveredPeers.get(senderPeerId)
 									let mddrs = []
 									for(const addr of addrs){
+										if(!addr.includes('webrtc'))continue
 										const mddr = multiaddr(addr)
 										mddrs.push(mddr)
 									}
 									this.#dialMultiaddress(mddrs)
 								}
-								else{
+								else if(this.#connectedPeers.has(senderPeerId)){
 									const addrs = this.#connectedPeers.get(senderPeerId).addrs
 									let mddrs = []
 									for(const addr of addrs){
+										if(!addr.includes('webrtc'))continue
 										const mddr = multiaddr(addr)
 										mddrs.push(mddr)
 									}
@@ -300,8 +308,10 @@ class webpeerjs{
 									
 									//update room members
 									if(!this.#rooms[room].members.includes(id)){
-										this.#rooms[room].members.push(id)
-										this.#rooms[room].onMembers(this.#rooms[room].members)
+										if(this.#connectedPeers.has(id)){
+											this.#rooms[room].members.push(id)
+											this.#rooms[room].onMembers(this.#rooms[room].members)
+										}
 									}
 
 									//inbound message
@@ -320,8 +330,10 @@ class webpeerjs{
 								for(const room of Object.keys(this.#rooms)){
 									//update room members
 									if(!this.#rooms[room].members.includes(id)){
-										this.#rooms[room].members.push(id)
-										this.#rooms[room].onMembers(this.#rooms[room].members)
+										if(this.#connectedPeers.has(id)){
+											this.#rooms[room].members.push(id)
+											this.#rooms[room].onMembers(this.#rooms[room].members)
+										}
 									}
 								}
 							}
@@ -330,7 +342,7 @@ class webpeerjs{
 								
 								//repply announce with ping
 								if(signal == 'announce'){
-									setTimeout(()=>{this.#ping('yes')},1000)
+									setTimeout(()=>{this.#ping('')},1000)
 									//console.log('rooms',rooms)
 								}
 								
@@ -345,12 +357,7 @@ class webpeerjs{
 						//console.log('from '+event.detail.from.toString())
 						mkDebug(err)
 					}
-				}else{
-					const json = JSON.parse(topic)
-					const room = json.room
-					const message = new TextDecoder().decode(event.detail.data)
-					this.#rooms[room].onMessage(message)
-				}
+				
 			}
 			
 		})
@@ -391,6 +398,7 @@ class webpeerjs{
 					if(!this.#connections.has(id)){
 						let mddrs = []
 						for(const addr of addrs){
+							if(!addr.includes('webrtc'))continue
 							const mddr = multiaddr(addr)
 							mddrs.push(mddr)
 						}
@@ -484,7 +492,7 @@ class webpeerjs{
 			const mddrs = []
 			peer.addresses.forEach((addr)=>{
 				const maddr = addr.multiaddr.toString()+'/p2p/'+id
-				if(maddr.includes('webtransport') && maddr.includes('certhash')){
+				if(maddr.includes('webtransport') && maddr.includes('certhash') && maddr.includes('webrtc')){
 					mddrs.push(maddr)
 				}
 			})
@@ -648,7 +656,7 @@ class webpeerjs{
 		//join room version 1 user pupsub via pupsub peer discovery
 		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 
-			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
+			const topics = config.CONFIG_PUPSUB_PEER_DATA
 			
 			this.#rooms[room] = {
 				onMessage : () => {},
@@ -702,6 +710,7 @@ class webpeerjs{
 		else{
 			this.status = 'unconnected'
 		}
+		this.#ping()
 	}
 	
 	async #registerProtocol(){
@@ -794,7 +803,7 @@ class webpeerjs{
 		await this.#libp2p.handle(config.CONFIG_PROTOCOL, handler, {
 		  maxInboundStreams: 50,
 		  maxOutboundStreams: 50,
-		  runOnTransientConnection:true
+		  runOnTransientConnection:false
 		})
 
 		await this.#libp2p.register(config.CONFIG_PROTOCOL, {
@@ -841,7 +850,7 @@ class webpeerjs{
 
 		try{
 			
-			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnTransientConnection:true})
+			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnTransientConnection:false})
 			
 			const output = await pipe(
 				message,
@@ -858,7 +867,7 @@ class webpeerjs{
 				  return string
 				}
 			)
-			
+			//console.log(output)
 			const json = JSON.parse(output)
 			if(json.protocol == config.CONFIG_PROTOCOL){
 				const address = [addr]
@@ -1062,7 +1071,7 @@ class webpeerjs{
 
 	//announce and ping via pupsub peer discovery
 	async #announce(){
-			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
+			const topics = config.CONFIG_PUPSUB_PEER_DATA
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address,rooms:this.#rooms})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
@@ -1074,7 +1083,7 @@ class webpeerjs{
 			}
 	}
 	async #ping(){
-			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY
+			const topics = config.CONFIG_PUPSUB_PEER_DATA
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address,rooms:this.#rooms})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
@@ -1622,11 +1631,13 @@ class webpeerjs{
 		const libp2p = await createLibp2p({
 			addresses: {
 				listen: [
+					'/webrtc'
 				],
 			},
 			transports:[
 				webTransport(),
 				webSockets(),
+				webRTC(),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
 					reservationConcurrency: 1,
@@ -1691,7 +1702,7 @@ class webpeerjs{
 					allowPublishToZeroTopicPeers: true,
 					msgIdFn: msgIdFnStrictNoSign,
 					ignoreDuplicatePublishError: true,
-					runOnTransientConnection:true,
+					runOnTransientConnection:false,
 				}),
 				identify: identify(),
 				identifyPush: identifyPush(),
@@ -1700,7 +1711,7 @@ class webpeerjs{
 					peerInfoMapper: removePrivateAddressesMapper,
 					clientMode: false
 				}),
-
+				dcutr: dcutr()
 			},
 			peerStore: {
 				persistence: true,
