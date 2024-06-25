@@ -1,7 +1,7 @@
 {
   "name": "webpeerjs",
   "version": "0.1.1",
-  "description": "Simple peer-to-peer with IPFS",
+  "description": "WebPEER.js simple peer-to-peer communication between applications in browser.",
   "main": "./dist/umd/webpeerjs.js",
   "module": "./src/webpeerjs.js",
   "exports": {
@@ -34,10 +34,16 @@
   "keywords": [
     "p2p",
     "ipfs",
+	"libp2p",
     "peer",
-    "peer to peer",
+    "peer-to-peer",
     "decentralized",
-    "browser to browser"
+    "browser-to-browser",
+	"dapp",
+	"distributed",
+	"decentralized-web",
+	"distributed-web",
+	"severless"
   ],
   "author": {
     "name": "Nuzulul Zulkarnain",
