@@ -1,4 +1,4 @@
-//! WebpeerJS -- https://github.com/nuzulul/webpeerjs
+//! WebPEER.js -- https://github.com/nuzulul/webpeerjs
 import * as config from  './config'
 import { 
 	mkErr,

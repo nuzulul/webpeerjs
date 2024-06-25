@@ -1,3 +1,5 @@
+//! WebPEER.js -- https://github.com/nuzulul/webpeerjs
+
 //this code comes from https://github.com/libp2p/js-libp2p-pubsub-peer-discovery/blob/9d0da565f70e9b2403251c9d11dfc0b9b52babfa/src/peer.ts
 
 import { decodeMessage, encodeMessage, message } from 'protons-runtime';

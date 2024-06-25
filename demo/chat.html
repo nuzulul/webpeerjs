@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebPEER.js</title>
+	<style>
+	#app{
+		border:1px solid grey;
+		max-width:400px;
+		border-radius:10px;
+		height:500px;
+		position:relative;
+	}
+	#members{
+		height:50px;
+		background:grey;
+		border-radius:10px 10px 0 0;
+	}
+	#bar{
+		height:50px;
+		border:1px solid grey;
+		position:absolute;
+		bottom:0px;
+		width:100%;
+		border-radius:0 0 10px 10px;
+		display: flex;
+	}
+	#chat{
+		flex:50%;
+	}
+	#type{
+		height:30px;
+		width:90%;
+		margin:5px auto auto 5px;
+	}
+	#submit{
+		height:100%;
+		background:grey;
+		border-radius:0 0 10px 0;
+		flex:10%;
+	}
+	#send{
+		height:30px;
+		width:50px;
+		margin:10px auto;
+		background:white;
+		line-height:30px;
+		text-align:center;
+		border-radius:5px 5px;
+		cursor:pointer;
+	}
+	#send:hover{
+		color:grey;
+	}
+	#counter{
+		width:50px;
+		background:grey;
+		height:100%;
+		border-radius:10px 0 0 0;
+		float:left;
+	}
+	#number{
+		width:30px;
+		height:30px;
+		background:white;
+		border-radius:50% 50% 50% 50%;
+		left:10px;
+		position:absolute;
+		top:10px;
+		text-align:center;
+		line-height:30px;
+	}
+	#users{
+		height:50px;
+		line-height:50px;
+		text-align:left;
+		color:white;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		background:grey
+	}
+	#status{
+		width:50px;
+		background:grey;
+		height:100%;
+		border-radius:0 10px 0 0;
+		float:right;
+		position:relative;
+	}
+	#indicator{
+		width:30px;
+		height:30px;
+		background:white;
+		border-radius:50% 50% 50% 50%;
+		left:10px;
+		top:10px;
+		position:absolute;
+	}
+	#myList{
+		overflow:scroll;
+		height:70%;
+	}
+
+	</style>
+  </head>
+  <body>
+    <p><a href="https://github.com/nuzulul/webpeerjs">WebPEER.js</a> Chat Demo | <a href="index.html">basic</a></p>
+	<div id="app">
+		<div id="members">
+			<div id="counter">
+				<div id="number"></div>
+			</div>
+			<div id="status">
+				<div id="indicator"></div>
+			</div>
+			<div id="users"></div>
+		</div>
+		<ul id="myList"></ul>
+		<div id="bar">
+
+			<div id="chat">
+				<input id="type" type="text"></input>
+			</div>
+			<div id="submit">
+				<div id="send">SEND</div>
+			</div>
+		<div>
+	</div>
+    <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.1/dist/umd/webpeerjs.min.js"></script>
+	<script>
+		void async function main() {
+
+			function write(input){
+				const node = document.createElement("li")
+				const textnode = document.createTextNode(input)
+				node.appendChild(textnode)
+				document.getElementById("myList").appendChild(node)
+				var objDiv = document.getElementById("myList");
+				objDiv.scrollTop = objDiv.scrollHeight;
+			}
+
+			const node = await webpeerjs.createWebpeer()
+			
+			const room = 'globalroom'
+			
+			const [broadcast,listen,members] = node.joinRoom(room)
+			
+			listen((message,id) => {
+			const user = id.slice(-6)
+				write(`${user} : ${message}`)
+			})
+			
+			members((data) => {
+				document.getElementById('number').innerText = data.length
+				let users = ''
+				for(const user of data){
+					users+=user.slice(-6)
+					users+=', '
+				}
+				document.getElementById('users').innerText = users
+				broadcast('hello')
+			})
+			
+			setInterval(()=>{
+				const status = node.status
+				if(status == 'connected'){
+					document.getElementById("indicator").style.backgroundColor = "green";
+				}else{
+					document.getElementById("indicator").style.backgroundColor = "red";
+				}
+			},500)
+			
+			document.getElementById("send").onclick = ()=>{
+				const msg = document.getElementById("type").value
+				
+				if(node.status == 'connected'){
+					document.getElementById("type").value = ''
+					const self = node.id.slice(-6)
+					write(`${self} (me): ${msg}`)
+					broadcast(msg)
+				}
+			}
+
+			const  type = document.getElementById("type");
+			type.addEventListener("keypress", function(event) {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					document.getElementById("send").click();
+				}
+			});
+		}()
+	</script>
+  </body>
+</html>
