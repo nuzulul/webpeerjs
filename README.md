@@ -1,7 +1,7 @@
 # WebPEER.js
-> Simple peer-to-peer communication between applications in browser.
+> Decentralized P2P JS library for communication between applications in browser.
 
-Build completely P2P web applications, no trackers or relay servers required. [WebPEER.js](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Connecting people safely, privately, anonymously and reliably. Let's create a next generation internet that is fair, free and open to all.
+Build completely peer-to-peer web applications, no trackers or relay servers required. [WebPEER.js](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Connecting projects safely, privately, anonymously and reliably.
 
 [Basic Connection Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
