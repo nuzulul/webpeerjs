@@ -350,18 +350,6 @@ class webpeerjs{
 							}
 							
 							if(signal){
-
-								if(signal == 'hybrid'){
-									
-									if(address.length>0 && !this.#connections.has(id)){
-										let mddrs = []
-										for(const addr of address){
-											const mddr = multiaddr(addr)
-											mddrs.push(mddr)
-										}
-										this.#dialMultiaddress(mddrs)
-									}
-								}
 								
 								//repply announce with ping
 								if(signal == 'announce'){
@@ -374,6 +362,18 @@ class webpeerjs{
 								}
 									
 							}
+						}
+						else if(prefix === 'hybrid'){
+							
+							if(address.length>0 && !this.#connections.has(id)){
+								let mddrs = []
+								for(const addr of address){
+									const mddr = multiaddr(addr)
+									mddrs.push(mddr)
+								}
+								this.#dialMultiaddress(mddrs)
+							}
+							
 						}
 
 					}catch(err){
@@ -1105,7 +1105,7 @@ class webpeerjs{
 	//announce and ping via pupsub peer discovery hybrid
 	async #peerDiscoveryHybrid(){
 			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID
-			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'hybrid',id:this.#libp2p.peerId.toString(),address:this.address})
+			const data = JSON.stringify({prefix:'hybrid',id:this.#libp2p.peerId.toString(),address:this.address})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
 			  addrs: [uint8ArrayFromString(data)],
