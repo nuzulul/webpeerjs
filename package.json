@@ -1,7 +1,7 @@
 {
   "name": "webpeerjs",
-  "version": "0.1.1",
-  "description": "WebPEER.js simple peer-to-peer communication between applications in browser.",
+  "version": "0.1.2",
+  "description": "WebPEER.js is decentralized P2P JS library for communication between applications in browser.",
   "main": "./dist/umd/webpeerjs.js",
   "module": "./src/webpeerjs.js",
   "exports": {
@@ -43,7 +43,7 @@
 	"distributed",
 	"decentralized-web",
 	"distributed-web",
-	"severless"
+	"serverless"
   ],
   "author": {
     "name": "Nuzulul Zulkarnain",

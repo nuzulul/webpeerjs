@@ -108,7 +108,7 @@ void async function main() {
 	setInterval(()=>{
 		sendMessage(number)
 		number++
-	},5000)
+	},1000)
 	
 	node.onConnect((id)=>{
 		console.log(`Connected to ${id}`)
