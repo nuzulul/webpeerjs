@@ -145,7 +145,10 @@ class webpeerjs{
 		for(const topic of config.CONFIG_PUPSUB_PEER_DATA){
 			this.#libp2p.services.pubsub.subscribe(topic)
 		}
-		
+
+		for(const topic of config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID){
+			this.#libp2p.services.pubsub.subscribe(topic)
+		}		
 		
 		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect",async (evt) => {
@@ -170,8 +173,10 @@ class webpeerjs{
 			//required by joinRoom version 1 to announce via universal connectivity
 			if(config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
 				setTimeout(()=>{
+					this.#peerDiscoveryHybrid()
 					this.#announce()
 					setTimeout(()=>{
+						this.#peerDiscoveryHybrid()
 						this.#announce()
 					},5000)
 				},1000)
@@ -345,6 +350,18 @@ class webpeerjs{
 							}
 							
 							if(signal){
+
+								if(signal == 'hybrid'){
+									
+									if(address.length>0 && !this.#connections.has(id)){
+										let mddrs = []
+										for(const addr of address){
+											const mddr = multiaddr(addr)
+											mddrs.push(mddr)
+										}
+										this.#dialMultiaddress(mddrs)
+									}
+								}
 								
 								//repply announce with ping
 								if(signal == 'announce'){
@@ -505,6 +522,7 @@ class webpeerjs{
 			//this.#ListenAddressChange(mddrs)
 			this.address = mddrs
 			this.#ping()
+			this.#peerDiscoveryHybrid()
 		})
 		
 		this.#libp2p.addEventListener('peer:identify', async (evt) => {
@@ -597,6 +615,10 @@ class webpeerjs{
 		setInterval(()=>{
 			this.#trackLastSeen()
 		},5e3)
+		
+		setInterval(()=>{
+			this.#peerDiscoveryHybrid()
+		},10e3)
 		
 
 		/*setTimeout(async()=>{
@@ -1075,7 +1097,20 @@ class webpeerjs{
 	}
 	
 
-	//announce and ping via pupsub peer discovery
+	//announce and ping via pupsub peer discovery hybrid
+	async #peerDiscoveryHybrid(){
+			const topics = config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID
+			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'hybrid',id:this.#libp2p.peerId.toString(),address:this.address})
+			const peer = {
+			  publicKey: this.#libp2p.peerId.publicKey,
+			  addrs: [uint8ArrayFromString(data)],
+			}
+			const encodedPeer = PBPeer.encode(peer)
+			for(const topic of topics){
+				await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
+			}
+	}
+	
 	async #announce(){
 			const topics = config.CONFIG_PUPSUB_PEER_DATA
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address,rooms:Object.keys(this.#rooms)})
@@ -1088,6 +1123,7 @@ class webpeerjs{
 				await this.#libp2p.services.pubsub.publish(topic, encodedPeer)
 			}
 	}
+	
 	async #ping(){
 			const topics = config.CONFIG_PUPSUB_PEER_DATA
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address,rooms:Object.keys(this.#rooms)})
@@ -1706,7 +1742,7 @@ class webpeerjs{
 			peerDiscovery: [
 				pubsubPeerDiscovery({
 					interval: 10_000,
-					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY,
+					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
 					listenOnly: false,
 				}),
 				
