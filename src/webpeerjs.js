@@ -692,9 +692,14 @@ class webpeerjs{
 				sendMessage : async (message) => {
 					const msgId = (new Date()).getTime()
 					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
+					const arr = uint8ArrayFromString(data)
+					const sizelimit = 102400 // 100KB
+					if(arr.byteLength > sizelimit){
+						throw mkErr('data too large')
+					}
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
-					  addrs: [uint8ArrayFromString(data)],
+					  addrs: [arr],
 					}
 					const encodedPeer = PBPeer.encode(peer)
 					for(const topic of topics){
