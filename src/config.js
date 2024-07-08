@@ -20,6 +20,7 @@ export const CONFIG_DNS_RESOLVER = 'https://dns.google/resolve'
 export const CONFIG_KNOWN_BOOTSTRAP_DNS = '_dnsaddr.bootstrap.libp2p.io'
 export const CONFIG_JOIN_ROOM_VERSION = 1
 export const CONFIG_TIMEOUT_DIAL_KNOWN_PEERS = 15000
+export const CONFIG_RUN_ON_TRANSIENT_CONNECTION = true
 
 // this list comes from https://github.com/ipfs/kubo/blob/196887cbe5fbcd41243c1dfb0db681a1cc2914ff/config/bootstrap_peers.go
 export const CONFIG_KNOWN_DEFAULT_BOOTSTRAP_ADDRESSES = [

@@ -515,7 +515,7 @@ class webpeerjs{
 			const mddrs = []
 			peer.addresses.forEach((addr)=>{
 				const maddr = addr.multiaddr.toString()+'/p2p/'+id
-				if(maddr.includes('webtransport') && maddr.includes('certhash') && maddr.includes('webrtc')){
+				if(maddr.includes('webtransport') && maddr.includes('certhash')){
 					mddrs.push(maddr)
 				}
 			})
@@ -684,7 +684,14 @@ class webpeerjs{
 		//join room version 1 user pupsub via pupsub peer discovery
 		if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 
-			const topics = config.CONFIG_PUPSUB_PEER_DATA
+			let topics = []
+			
+			if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == true){
+				topics = config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID
+			}
+			else{
+				topics = config.CONFIG_PUPSUB_PEER_DATA
+			}
 			
 			this.#rooms[room] = {
 				onMessage : () => {},
@@ -834,9 +841,9 @@ class webpeerjs{
 		}
 
 		await this.#libp2p.handle(config.CONFIG_PROTOCOL, handler, {
-		  maxInboundStreams: 50,
-		  maxOutboundStreams: 50,
-		  runOnTransientConnection:false
+		  maxInboundStreams: 100,
+		  maxOutboundStreams: 100,
+		  runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION
 		})
 
 		await this.#libp2p.register(config.CONFIG_PROTOCOL, {
@@ -883,7 +890,7 @@ class webpeerjs{
 
 		try{
 			
-			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnTransientConnection:false})
+			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION})
 			
 			const output = await pipe(
 				message,
@@ -1117,7 +1124,14 @@ class webpeerjs{
 	}
 	
 	async #announce(){
-			const topics = config.CONFIG_PUPSUB_PEER_DATA
+			let topics = []
+			
+			if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == true){
+				topics = config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID
+			}
+			else{
+				topics = config.CONFIG_PUPSUB_PEER_DATA
+			}
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'announce',id:this.#libp2p.peerId.toString(),address:this.address,rooms:Object.keys(this.#rooms)})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
@@ -1130,7 +1144,14 @@ class webpeerjs{
 	}
 	
 	async #ping(){
-			const topics = config.CONFIG_PUPSUB_PEER_DATA
+			let topics = []
+			
+			if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == true){
+				topics = config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID
+			}
+			else{
+				topics = config.CONFIG_PUPSUB_PEER_DATA
+			}
 			const data = JSON.stringify({prefix:config.CONFIG_PREFIX,signal:'ping',id:this.#libp2p.peerId.toString(),address:this.address,rooms:Object.keys(this.#rooms)})
 			const peer = {
 			  publicKey: this.#libp2p.peerId.publicKey,
@@ -1674,12 +1695,16 @@ class webpeerjs{
 		let onMetricsFn = () => {}
 		const onMetrics = f => (onMetricsFn = f)
 		
+		let listenaddress = []
+		
+		if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == false){
+			listenaddress.push('/webrtc')
+		}
+		
 		//create libp2p instance
 		const libp2p = await createLibp2p({
 			addresses: {
-				listen: [
-					'/webrtc'
-				],
+				listen: listenaddress,
 			},
 			transports:[
 				webTransport(),
@@ -1718,8 +1743,8 @@ class webpeerjs{
 			connectionEncryption: [noise()],
 			streamMuxers: [
 				yamux({
-					maxInboundStreams: 20,
-					maxOutboundStreams: 20,
+					maxInboundStreams: 100,
+					maxOutboundStreams: 100,
 				})
 			],
 			connectionGater: {
@@ -1757,7 +1782,7 @@ class webpeerjs{
 					allowPublishToZeroTopicPeers: true,
 					msgIdFn: msgIdFnStrictNoSign,
 					ignoreDuplicatePublishError: true,
-					runOnTransientConnection:false,
+					runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION,
 				}),
 				identify: identify(),
 				identifyPush: identifyPush(),
