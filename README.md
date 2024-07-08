@@ -12,7 +12,7 @@ Build completely peer-to-peer web applications, no trackers or relay servers req
 * ✅ Works in Browsers
 * ✅ Broadcast Message
 
-# Security
+## Security
 
 WebPEER.js uses [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/security-considerations/#publish--subscribe) to enables communication between applications. 
 
