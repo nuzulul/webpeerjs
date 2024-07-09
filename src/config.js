@@ -1,11 +1,12 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
+
 const prefix = 'webpeerjs'
 export const CONFIG_PREFIX = prefix
 export const CONFIG_PROTOCOL = '/'+prefix+'/1.0.0'
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
 export const CONFIG_DATASTORE_PATH = prefix+'-datastore'
 export const CONFIG_DBSTORE_PATH = prefix+'-dbstore'
-export const CONFIG_MAX_CONNECTIONS = 100
+export const CONFIG_MAX_CONNECTIONS = 50
 export const CONFIG_MIN_CONNECTIONS = 0
 export const CONFIG_DISCOVER_RELAYS = 1
 export const CONFIG_PEER_DISCOVERY_UNIVERSAL_CONNECTIVITY = 'universal-connectivity-browser-peer-discovery'
@@ -20,7 +21,11 @@ export const CONFIG_DNS_RESOLVER = 'https://dns.google/resolve'
 export const CONFIG_KNOWN_BOOTSTRAP_DNS = '_dnsaddr.bootstrap.libp2p.io'
 export const CONFIG_JOIN_ROOM_VERSION = 1
 export const CONFIG_TIMEOUT_DIAL_KNOWN_PEERS = 15000
-export const CONFIG_RUN_ON_TRANSIENT_CONNECTION = true
+export const CONFIG_RUN_ON_TRANSIENT_CONNECTION = false
+export const CONFIG_WEBRTC_TURN_HOST = 'dHVybjpzdGFuZGFyZC5yZWxheS5tZXRlcmVkLmNhOjgw'
+export const CONFIG_WEBRTC_TURN_USER = 'ZmZlNmIxOThjOGMxYjM5ODg1OWFiOGY4'
+export const CONFIG_WEBRTC_TURN_PWD = 'aWpkQjVTcTIwREVsZzdDRg=='
+export const CONFIG_MESSAGE_SIZE_LIMIT = 10240 // 10KB
 
 // this list comes from https://github.com/ipfs/kubo/blob/196887cbe5fbcd41243c1dfb0db681a1cc2914ff/config/bootstrap_peers.go
 export const CONFIG_KNOWN_DEFAULT_BOOTSTRAP_ADDRESSES = [

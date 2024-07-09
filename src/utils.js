@@ -1,4 +1,5 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
+
 import * as config from  './config'
 import { Peer as PBPeer } from './peer'
 import { Key } from 'interface-datastore'

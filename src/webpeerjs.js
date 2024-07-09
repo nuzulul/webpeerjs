@@ -1,4 +1,5 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
+
 import * as config from  './config'
 import { 
 	mkErr,
@@ -700,9 +701,9 @@ class webpeerjs{
 					const msgId = (new Date()).getTime()
 					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
 					const arr = uint8ArrayFromString(data)
-					const sizelimit = 102400 // 100KB
+					const sizelimit = config.CONFIG_MESSAGE_SIZE_LIMIT
 					if(arr.byteLength > sizelimit){
-						throw mkErr('data too large')
+						throw mkErr('message too large')
 					}
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
@@ -1032,7 +1033,7 @@ class webpeerjs{
 
 	
 	//add multiaddr address to queue list
-	#dialMultiaddress(mddrs){
+	async #dialMultiaddress(mddrs){
 		if(mddrs.length>0){
 			
 			const id = mddrs[0].toString().split('/').pop()
@@ -1050,10 +1051,21 @@ class webpeerjs{
 			const limitCount = config.CONFIG_MAX_CONNECTIONS / 2
 			
 			if(this.#webPeersId.includes(id)){
-				if(webPeerCount>limitCount)return
+				if(webPeerCount>limitCount){
+					return
+				}
 			}
 			else{
-				if(nodePeerCount>limitCount)return
+				if(nodePeerCount>limitCount){
+					//close random peers
+					let peers = []
+					for(const peer of this.#libp2p.getPeers()){
+						peers.push(peer.toString())
+					}
+					const randomKey = Math.floor(Math.random() * peers.length)
+					const randompeerid = peers[randomKey]
+					await this.#libp2p.hangUp(peerIdFromString(randompeerid))
+				}
 			}
 			
 			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
@@ -1361,13 +1373,13 @@ class webpeerjs{
 	#dialKnownPeers(){
 		setTimeout(()=>{
 			this.#dialSavedKnownID()
-			setTimeout(()=>{this.#dialUpdateSavedKnownID()},50000)
-			setTimeout(()=>{this.#findHybridPeer()},60000)
+			setTimeout(()=>{this.#dialUpdateSavedKnownID()},20000)
+			setTimeout(()=>{this.#findHybridPeer()},30000)
 			setTimeout(()=>{
 				const peers = this.#libp2p.getPeers().length
 				if(peers == 0){
 					this.#dialKnownID()
-					setTimeout(()=>{this.#findHybridPeer()},60000)
+					setTimeout(()=>{this.#findHybridPeer()},30000)
 					setTimeout(()=>{
 						const peers = this.#libp2p.getPeers().length
 						if(peers == 0){
@@ -1701,6 +1713,10 @@ class webpeerjs{
 			listenaddress.push('/webrtc')
 		}
 		
+		const turnurls = atob(config.CONFIG_WEBRTC_TURN_HOST)
+		const turnusername = atob(config.CONFIG_WEBRTC_TURN_USER)
+		const turncredential = atob(config.CONFIG_WEBRTC_TURN_PWD)
+		
 		//create libp2p instance
 		const libp2p = await createLibp2p({
 			addresses: {
@@ -1711,11 +1727,16 @@ class webpeerjs{
 				webSockets(),
 				webRTC({
 					rtcConfiguration: {
-					  iceServers: [
-						{
-						  urls: ['stun:stun.l.google.com:19302', 'stun:global.stun.twilio.com:3478'],
-						},
-					  ],
+						iceServers: [
+							{
+								urls: "stun:stun.l.google.com:19302",
+							},
+							{
+								urls: turnurls,
+								username: turnusername,
+								credential: turncredential,
+							},
+						],
 					},
 				}),
 				circuitRelayTransport({
