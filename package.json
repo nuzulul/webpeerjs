@@ -1,6 +1,6 @@
 {
   "name": "webpeerjs",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "WebPEER.js is decentralized P2P JS library for communication between applications in browser.",
   "main": "./dist/umd/webpeerjs.js",
   "module": "./src/webpeerjs.js",
