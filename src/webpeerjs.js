@@ -1716,6 +1716,98 @@ class webpeerjs{
 		const turnurls = atob(config.CONFIG_WEBRTC_TURN_HOST)
 		const turnusername = atob(config.CONFIG_WEBRTC_TURN_USER)
 		const turncredential = atob(config.CONFIG_WEBRTC_TURN_PWD)
+
+		const turnurlsbackup = atob(config.CONFIG_WEBRTC_TURN_HOST_BACKUP)
+		const turnusernamebackup = atob(config.CONFIG_WEBRTC_TURN_USER_BACKUP)
+		const turncredentialbackup = atob(config.CONFIG_WEBRTC_TURN_PWD_BACKUP)
+		
+		const ice = await new Promise((resolve)=>{
+			
+			let stun = false
+			let turn = false
+			
+			const timeout = setTimeout(()=>{
+				let ice = []
+				if(stun){
+					ice.push(stun)
+				}else{
+					const backup = {
+						urls: config.CONFIG_WEBRTC_STUN_URLS_BACKUP
+					}
+					ice.push(backup)
+				}
+				if(turn){
+					ice.push(turn)
+				}else{
+					const backup = 	{
+						urls: turnurlsbackup, 
+						username: turnusernamebackup, 
+						credential: turncredentialbackup
+					}
+					ice.push(backup)
+				}
+				resolve(ice)
+			},5000)
+			
+			function check(){
+				if(stun && turn){
+					let ice = []
+					ice.push(stun)
+					ice.push(turn)
+					clearTimeout(timeout)
+					resolve(ice)
+				}
+			}
+			
+			//test ice servers
+			
+			const iceServers = [
+				{
+					urls: config.CONFIG_WEBRTC_STUN_URLS
+				},
+				{
+					urls: turnurls, 
+					username: turnusername, 
+					credential: turncredential
+				}
+			];
+
+			const pc = new RTCPeerConnection({
+				iceServers
+			});
+
+			pc.onicecandidate = (e) => {
+				if (!e.candidate) return;
+
+				//console.log(e.candidate.candidate);
+
+				// stun works
+				if(e.candidate.type == "srflx"){
+					//console.log('publicip',e.candidate.address);
+					stun = 	{
+								urls: config.CONFIG_WEBRTC_STUN_URLS
+							}
+					check()
+				}
+
+				// turn works
+				if(e.candidate.type == "relay"){
+					turn =  {
+								urls: turnurls, 
+								username: turnusername, 
+								credential: turncredential
+							}
+					check()
+				}
+			};
+
+			pc.onicecandidateerror = (e) => {
+				//console.error(e);
+			};
+
+			pc.createDataChannel('webpeerjs');
+			pc.createOffer().then(offer => pc.setLocalDescription(offer));
+		})
 		
 		//create libp2p instance
 		const libp2p = await createLibp2p({
@@ -1727,16 +1819,7 @@ class webpeerjs{
 				webSockets(),
 				webRTC({
 					rtcConfiguration: {
-						iceServers: [
-							{
-								urls: "stun:stun.l.google.com:19302",
-							},
-							{
-								urls: turnurls,
-								username: turnusername,
-								credential: turncredential,
-							},
-						],
+						iceServers: ice,
 					},
 				}),
 				circuitRelayTransport({
