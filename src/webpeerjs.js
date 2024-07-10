@@ -185,6 +185,14 @@ class webpeerjs{
 			
 			if(this.#webPeersId.includes(id)){
 				
+				setTimeout(()=>{
+					this.#ping()
+				},10000)
+
+				setTimeout(()=>{
+					this.#ping()
+				},15000)
+				
 				let address = [addr]
 
 				if(this.#connectedPeers.has(id)){
@@ -288,7 +296,7 @@ class webpeerjs{
 						const msgId = json.msgId
 						const signal = json.signal
 						const id = json.id
-						//console.log(`from ${id}:${signal} = ${message}`)
+						//console.log(`from ${id}:${signal} = ${msg}`)
 						if(id != senderPeerId)return
 						let address = json.address
 						
@@ -1056,7 +1064,7 @@ class webpeerjs{
 				}
 			}
 			else{
-				if(nodePeerCount>limitCount){
+				if((nodePeerCount>(limitCount-5))||(allPeerCount>(config.CONFIG_MAX_CONNECTIONS-5))){
 					//close random peers
 					let peers = []
 					for(const peer of this.#libp2p.getPeers()){
@@ -1064,7 +1072,9 @@ class webpeerjs{
 					}
 					const randomKey = Math.floor(Math.random() * peers.length)
 					const randompeerid = peers[randomKey]
-					await this.#libp2p.hangUp(peerIdFromString(randompeerid))
+					if(!config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
+						await this.#libp2p.hangUp(peerIdFromString(randompeerid))
+					}
 				}
 			}
 			

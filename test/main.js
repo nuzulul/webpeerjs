@@ -106,7 +106,7 @@ void async function main() {
 	let number = 0
 	
 	setInterval(()=>{
-		sendMessage(number)
+		//sendMessage(number)
 		number++
 	},1000)
 	
