@@ -99,6 +99,9 @@ class webpeerjs{
 	//track last connect to webpeer network
 	#lastTimeConnectToNetwork
 	
+	//arr to track on connect event
+	#onConnectQueue
+	
 	id
 	status
 	IPFS
@@ -129,6 +132,7 @@ class webpeerjs{
 		this.#msgIdtracker = []
 		this.#peerexchangedata = new Map()
 		this.#lastTimeConnectToNetwork = new Date().getTime()
+		this.#onConnectQueue = []
 		
 		this.peers = (function(f) {
 			return f
@@ -207,7 +211,7 @@ class webpeerjs{
 				}
 				else{
 					//add to connected webpeers
-					this.#onConnectFn(id)
+					this.#onConnectFnUpdate(id)
 					const now = new Date().getTime()
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata)
@@ -260,7 +264,7 @@ class webpeerjs{
 							}
 							else{
 								//add to connected webpeers
-								this.#onConnectFn(senderPeerId)
+								this.#onConnectFnUpdate(senderPeerId)
 								const address = this.#webPeersAddrs.get(senderPeerId)
 								const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
@@ -339,7 +343,7 @@ class webpeerjs{
 							
 							//add to connected webpeers
 							if(!this.#connectedPeers.has(id)){
-								this.#onConnectFn(id)
+								this.#onConnectFnUpdate(id)
 								address = []
 								const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
@@ -779,6 +783,20 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+	
+	//prevent double on connect event
+	#onConnectFnUpdate(id){
+		if(!this.#onConnectQueue.includes(id)){
+			this.#onConnectQueue.push(id)
+			this.#onConnectFn(id)
+			setTimeout(()=>{
+				const index = this.#onConnectQueue.indexOf(id)
+				if (index > -1) {
+					this.#onConnectQueue.splice(index, 1)
+				}
+			},5000)
+		}
+	}
 
 	#updatePeers(){
 		this.#connectedPeersArr.length = 0
@@ -836,7 +854,7 @@ class webpeerjs{
 							if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 								
 							//add to connected webpeers
-							this.#onConnectFn(id)
+							this.#onConnectFnUpdate(id)
 							const now = new Date().getTime()
 							const metadata = {addrs:address,last:now}
 							this.#connectedPeers.set(id,metadata)
@@ -963,7 +981,7 @@ class webpeerjs{
 					if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 						
 					//add to connected webpeers
-					this.#onConnectFn(id)
+					this.#onConnectFnUpdate(id)
 					const now = new Date().getTime()
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata)
