@@ -96,6 +96,9 @@ class webpeerjs{
 	//map of peer exchange data
 	#peerexchangedata
 	
+	//track last connect to webpeer network
+	#lastTimeConnectToNetwork
+	
 	id
 	status
 	IPFS
@@ -125,6 +128,7 @@ class webpeerjs{
 		this.#isDialEnabled = true
 		this.#msgIdtracker = []
 		this.#peerexchangedata = new Map()
+		this.#lastTimeConnectToNetwork = new Date().getTime()
 		
 		this.peers = (function(f) {
 			return f
@@ -225,11 +229,24 @@ class webpeerjs{
 			if (event.detail.type !== 'signed') {
 			  return
 			}
+			
 			if(config.CONFIG_JOIN_ROOM_VERSION == 1){
 				const topic = event.detail.topic
 				const senderPeerId = event.detail.from.toString()
 				
 					try{
+						
+						//track last connect to webpeer network
+						if(config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER.includes(topic)){
+							const now = new Date().getTime()
+							const limit = 15*1000
+							const lastConnectTime = now - this.#lastTimeConnectToNetwork
+							if(lastConnectTime > limit){
+								//console.log('need re announce')
+								this.#announce()
+							}
+							this.#lastTimeConnectToNetwork = now
+						}
 						
 						//if it is webpeer 
 						if(this.#webPeersId.includes(senderPeerId)){
