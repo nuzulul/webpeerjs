@@ -304,6 +304,19 @@ class webpeerjs{
 						
 						//parse the message over pupsub peer discovery
 						const peer = PBPeer.decode(event.detail.data)
+						
+						//detect libp2p pupsub peer discovery
+						if(peer.addrs.length > 1 && this.#libp2p.getPeers().length < config.CONFIG_MAX_CONNECTIONS){
+							let mddrs = []
+							for(const uaddr of peer.addrs){
+								const mddr = multiaddr(uaddr)
+								if(mddr.toString().includes('webtransport') && mddr.toString().includes('certhash')){
+									mddrs.push(mddr)
+								}
+							}
+							this.#dialMultiaddress(mddrs)
+						}
+						
 						const msg = uint8ArrayToString(peer.addrs[0])
 						const json = JSON.parse(msg)
 						const prefix = json.prefix
@@ -313,9 +326,10 @@ class webpeerjs{
 						const msgId = json.msgId
 						const signal = json.signal
 						const id = json.id
+						const address = json.address
 						//console.log(`from ${id}:${signal} = ${msg}`)
+						
 						if(id != senderPeerId)return
-						let address = json.address
 						
 						//detect special webpeer identity
 						if(prefix === config.CONFIG_PREFIX){
