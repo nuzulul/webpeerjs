@@ -374,7 +374,9 @@ class webpeerjs{
 						}
 						else if(prefix === 'hybrid'){
 							
-							if(address.length>0 && !this.#connections.has(id)){
+							//console.log('hybrid' +id,address)
+							const limit = config.CONFIG_MAX_CONNECTIONS / 2
+							if(address.length>0 && ((!this.#connections.has(id))||(this.#connectedPeers.size < limit))){
 								let mddrs = []
 								for(const addr of address){
 									const mddr = multiaddr(addr)
@@ -1091,7 +1093,7 @@ class webpeerjs{
 	//dial multiaddr address in queue list
 	#dialQueueList(){
 		
-		if(!this.#isDialEnabled || !navigator.onLine)return
+		if(!this.#isDialEnabled || !navigator.onLine || document.visibilityState === 'hidden' )return
 		
 		const mddrsToDial = 5
 		
