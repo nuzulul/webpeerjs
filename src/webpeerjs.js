@@ -319,6 +319,7 @@ class webpeerjs{
 								}
 							}
 							this.#dialMultiaddress(mddrs)
+							//console.log('dial '+senderPeerId,mddrs.toString())
 						}
 						
 						const msg = uint8ArrayToString(peer.addrs[0])
@@ -418,6 +419,7 @@ class webpeerjs{
 									mddrs.push(mddr)
 								}
 								this.#dialMultiaddress(mddrs)
+								//console.log('dial '+id,mddrs.toString())
 							}
 							
 						}
@@ -669,6 +671,7 @@ class webpeerjs{
 		
 		setInterval(()=>{
 			this.#peerDiscoveryHybrid()
+			this.#trackHybridPeersConnection()
 		},10e3)
 		
 
@@ -788,6 +791,25 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+	
+	#trackHybridPeersConnection(){
+		let isConnectedToHybridPeers = false
+		for(const id of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
+			if(this.#isConnected(id))isConnectedToHybridPeers = true
+		}
+		if(!isConnectedToHybridPeers){
+			for(const id of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
+				if(this.status !== 'connected' && this.#connections.has(id))
+				{
+					let mddrs = []
+					const addr = this.#connections.get(id)
+					const mddr = multiaddr(addr)
+					mddrs.push(mddr)
+					this.#dialMultiaddress(mddrs)
+				}
+			}
+		}
+	}
 	
 	//prevent double on connect event
 	#onConnectFnUpdate(id){

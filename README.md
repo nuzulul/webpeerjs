@@ -14,7 +14,8 @@ WebPEER.js uses [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/se
 * ✅ Decentralized P2P
 * ✅ Scalable Peers
 * ✅ Works in Browsers
-* ✅ Broadcast Message
+* ✅ Broadcast Messages
+* ✅ Censorship Resistant
 
 ## Browser Support
 ![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) | ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) | ![Brave](https://raw.github.com/alrra/browser-logos/master/src/brave/brave_48x48.png) |
