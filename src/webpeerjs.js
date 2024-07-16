@@ -331,7 +331,7 @@ class webpeerjs{
 						const msgId = json.msgId
 						const signal = json.signal
 						const id = json.id
-						const address = json.address
+						let address = json.address
 						//console.log(`from ${id}:${signal} = ${msg}`)
 						
 						if(id != senderPeerId)return
@@ -345,7 +345,7 @@ class webpeerjs{
 							//add to connected webpeers
 							if(!this.#connectedPeers.has(id)){
 								this.#onConnectFnUpdate(id)
-								address = []
+								if(!address)address = []
 								const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(id,metadata)
