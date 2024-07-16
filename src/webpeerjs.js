@@ -496,7 +496,12 @@ class webpeerjs{
 				count++
 				this.#trackDisconnect.set(id,count)
 				//console.log(this.#trackDisconnect)
-				if(count>10){
+				if(count>5){
+					if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC_IDS.includes(id)){
+						return
+					}
+				}
+				else if(count>10){
 					if(this.#dbstoreData.has(id)){
 						this.#dbstoreData.delete(id)
 					}
@@ -1104,6 +1109,8 @@ class webpeerjs{
 				return
 			}
 			
+			if(this.status === 'connected' && config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC_IDS.includes(id))return
+			
 			const webPeerCount = this.#connectedPeers.size
 			const allPeerCount = this.#libp2p.getPeers().length
 			const nodePeerCount = allPeerCount - webPeerCount
@@ -1142,7 +1149,7 @@ class webpeerjs{
 	//dial multiaddr address in queue list
 	#dialQueueList(){
 		
-		if(!this.#isDialEnabled || !navigator.onLine || document.visibilityState === 'hidden' )return
+		if(!this.#isDialEnabled || !navigator.onLine || (document.visibilityState === 'hidden' && ('ontouchstart' in document.documentElement)) )return
 		
 		const mddrsToDial = 5
 		
