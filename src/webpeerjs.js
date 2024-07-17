@@ -1102,7 +1102,7 @@ class webpeerjs{
 	
 	//check the last seen in web peer
 	#trackLastSeen(){
-		const timeout = 25*1000
+		const timeout = 10*1000
 		const forcetimeout = 60*1000
 		const now = new Date().getTime()
 		
@@ -1993,7 +1993,7 @@ class webpeerjs{
 			},
 			peerDiscovery: [
 				pubsubPeerDiscovery({
-					interval: 10_000,
+					interval: 5_000,
 					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
 					listenOnly: false,
 				}),
