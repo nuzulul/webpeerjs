@@ -97,6 +97,7 @@ class webpeerjs{
 	
 	//track last connect to webpeer network
 	#lastTimeConnectToNetwork
+	#lastTimeReceiveData
 	
 	//arr to track on connect event
 	#onConnectQueue
@@ -131,6 +132,7 @@ class webpeerjs{
 		this.#msgIdtracker = []
 		this.#peerexchangedata = new Map()
 		this.#lastTimeConnectToNetwork = new Date().getTime()
+		this.#lastTimeReceiveData = new Date().getTime()
 		this.#onConnectQueue = []
 		
 		this.peers = (function(f) {
@@ -208,7 +210,7 @@ class webpeerjs{
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata)
 				}
-				else{
+				else if(this.#lastTimeReceiveData < 10*1000){
 					//add to connected webpeers
 					this.#onConnectFnUpdate(id)
 					const now = new Date().getTime()
@@ -239,6 +241,10 @@ class webpeerjs{
 				
 					try{
 						
+						if(topic === config.CONFIG_PUPSUB_PEER_DATA || config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER.includes(topic) || config.CONFIG_RUN_ON_TRANSIENT_CONNECTION){
+							this.#lastTimeReceiveData = new Date().getTime()
+						}
+						
 						//track last connect to webpeer network
 						if(config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER.includes(topic)){
 							const now = new Date().getTime()
@@ -261,7 +267,7 @@ class webpeerjs{
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(senderPeerId,metadata)
 							}
-							else{
+							else if(this.#lastTimeReceiveData < 10*1000){
 								//add to connected webpeers
 								this.#onConnectFnUpdate(senderPeerId)
 								const address = this.#webPeersAddrs.get(senderPeerId)
@@ -338,6 +344,8 @@ class webpeerjs{
 						//detect special webpeer identity
 						if(prefix === config.CONFIG_PREFIX){
 
+							this.#lastTimeReceiveData = new Date().getTime()
+							
 							//add to webpeers id
 							if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 							
