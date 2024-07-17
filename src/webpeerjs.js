@@ -330,7 +330,7 @@ class webpeerjs{
 						const msgId = json.msgId
 						const signal = json.signal
 						const id = json.id
-						let address = json.address
+						const address = json.address
 						//console.log(`from ${id}:${signal} = ${msg}`)
 						
 						if(id != senderPeerId)return
@@ -344,12 +344,21 @@ class webpeerjs{
 							//add to connected webpeers
 							if(!this.#connectedPeers.has(id)){
 								this.#onConnectFnUpdate(id)
-								if(!address)address = []
 								const now = new Date().getTime()
 								const metadata = {addrs:address,last:now}
 								this.#connectedPeers.set(id,metadata)
-								this.#webPeersAddrs.set(id,address)
+								if(address){
+									if(address.length > 0){
+										this.#webPeersAddrs.set(id,address)
+									}
+								}
 								this.#updatePeers()
+							}else{
+								if(address){
+									if(address.length > 0){
+										this.#webPeersAddrs.set(id,address)
+									}
+								}								
 							}
 
 							
@@ -671,6 +680,7 @@ class webpeerjs{
 		setInterval(()=>{
 			this.#peerDiscoveryHybrid()
 			this.#trackHybridPeersConnection()
+			this.#trackWebpeerConnection()
 		},10e3)
 		
 
@@ -791,6 +801,7 @@ class webpeerjs{
 	PRIVATE FUNCTION
 	*/
 	
+	//track hybrid peer connection and try to dial if not connected at least 1
 	#trackHybridPeersConnection(){
 		let isConnectedToHybridPeers = false
 		for(const id of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
@@ -808,6 +819,24 @@ class webpeerjs{
 				}
 			}
 		}
+	}
+	
+	//track webpeer connection and try to dial if not connected to network using saved webpeer address
+	#trackWebpeerConnection(){
+		if(this.status === 'connected')return
+		if(this.#webPeersAddrs.size < 1)return
+		
+		const keys = Array.from(this.#webPeersAddrs.keys())
+		const randomKey = Math.floor(Math.random() * keys.length)
+		const key = keys[randomKey]
+		const addrs = this.#webPeersAddrs.get(key)
+		
+		let mddrs = []
+		for(const addr of addrs){
+			const mddr = multiaddr(addr)
+			mddrs.push(mddr)
+		}
+		this.#dialMultiaddress(mddrs)
 	}
 	
 	//prevent double on connect event
