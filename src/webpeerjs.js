@@ -10,11 +10,10 @@ import {
 	Key,
 	msgIdFnStrictNoSign,
 	metrics,
-	getDigest,
+	//getDigest,
 	mkDebug,
 	multiaddr,
 	pipe,
-	lpStream,
 	lp,
 	map
 } from './utils'
@@ -162,7 +161,7 @@ class webpeerjs{
 		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect",async (evt) => {
 			
-			const connection = evt.detail;
+			//const connection = evt.detail;
 			const id = evt.detail.toString()
 			
 			//console.log('peer:connect '+id,evt)
@@ -842,7 +841,7 @@ class webpeerjs{
 	
 	async #registerProtocol(){
 		
-		const handler = async ({ connection, stream, protocol }) => {
+		const handler = async ({ connection, stream }) => {
 			try{
 				const output = await pipe(
 					stream.source,
@@ -923,7 +922,7 @@ class webpeerjs{
 				)
 			}
 			catch(err){
-				//console.warn(err)
+				mkDebug(err)
 			}
 		}
 
@@ -934,14 +933,14 @@ class webpeerjs{
 		})
 
 		await this.#libp2p.register(config.CONFIG_PROTOCOL, {
-		  onConnect: (peer, connection) => {
-			// handle connect
+		  /*onConnect: (peer, connection) => {
+			//handle connect
 			//console.log('handle connect',peer)
 		  },
 		  onDisconnect: (peer, connection) => {
-			// handle disconnect
+			//handle disconnect
 			//console.log('handle disconnect',peer)
-		  }
+		  }*/
 		})
 
 	}
@@ -1032,7 +1031,7 @@ class webpeerjs{
 			}
 		}
 		catch(err){
-			//console.warn(err)
+			mkDebug(err)
 		}
 	}
 	
@@ -1892,7 +1891,7 @@ class webpeerjs{
 			};
 
 			pc.onicecandidateerror = (e) => {
-				//console.error(e);
+				console.debug(e);
 			};
 
 			pc.createDataChannel('webpeerjs');

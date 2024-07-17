@@ -27,7 +27,8 @@ const prefix = config.CONFIG_PREFIX
 
 export const mkErr = msg => new Error(`${prefix}: ${msg}`)
 
-export function mkDebug(error){
+export function mkDebug(msg){
+	console.debug(msg)
 	return
 }
 
@@ -167,14 +168,14 @@ export function metrics(data){
 		if ((fail-lastfailtreshold)>30){
 			if(isDialEnabled){
 				isDialEnabled = false
-				const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-				console.warn('dial disabled')
+				//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+				console.warn('Peer dial is temporary disabled')
 				setTimeout(()=>{
 					if(!isDialEnabled){
 						isDialEnabled = true
 						lastfailtreshold = fail
-						const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-						console.warn('dial enabled')
+						//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
+						console.warn('Peer dial is enabled')
 					}
 				},6*60*1000)
 			}
