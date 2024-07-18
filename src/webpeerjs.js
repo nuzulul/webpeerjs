@@ -88,6 +88,7 @@ class webpeerjs{
 	
 	//is dial enabled
 	#isDialEnabled
+	#isAutoDialEnabled
 	
 	//message tracker avoid double
 	#msgIdtracker
@@ -111,7 +112,7 @@ class webpeerjs{
 	address
 	peers
 	
-	constructor(libp2p,dbstore,onMetrics,onWebsocketFn){
+	constructor(libp2p,dbstore,onMetrics,onWebsocketFn,onDialFn){
 		
 		this.#libp2p = libp2p
 		this.#dbstore = dbstore
@@ -133,6 +134,7 @@ class webpeerjs{
 		this.#trackDisconnect = new Map()
 		this.#dialQueue = []
 		this.#isDialEnabled = true
+		this.#isAutoDialEnabled = true
 		this.#msgIdtracker = []
 		this.#peerexchangedata = new Map()
 		this.#lastTimeConnectToNetwork = new Date().getTime()
@@ -673,7 +675,9 @@ class webpeerjs{
 
 		onMetrics((data)=>{
 			const signal = metrics(data)
-			this.#isDialEnabled = signal
+			this.#isDialEnabled = signal.isDialEnabled
+			this.#isAutoDialEnabled = signal.isAutoDialEnabled
+			onDialFn(signal.isAutoDialEnabled)
 			
 		})
 		
@@ -1848,6 +1852,14 @@ class webpeerjs{
 			isWebsocket = data
 		})
 		
+		let isDial = true
+		let onDialFn = () => {}
+		const onDial = f => (onDialFn = f)
+		onDial((data)=>{
+			if(isDial!=data)console.warn('isDial',data)
+			isDial = data
+		})
+		
 		let listenaddress = []
 		
 		if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == false){
@@ -1995,26 +2007,26 @@ class webpeerjs{
 			],
 			connectionGater: {
 				filterMultiaddrForPeer: async (peer, multiaddrTest) => {
-					const multiaddrString = multiaddrTest.toString();
+					const multiaddrString = multiaddrTest.toString()
 					if (
 						multiaddrString.includes("/ip4/127.0.0.1") ||
 						multiaddrString.includes("/ip6/")
 					) {
-						return false;
+						return false
 					}
 					if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return isWebsocket
-					return true;
+					return isDial
 				},
 				denyDialMultiaddr: async (multiaddrTest) => {
-					const multiaddrString = multiaddrTest.toString();
+					const multiaddrString = multiaddrTest.toString()
 					if (
 						multiaddrString.includes("/ip4/127.0.0.1") ||
 						multiaddrString.includes("/ip6/")
 					) {
-						return true;
+						return true
 					}
 					if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return !isWebsocket
-					return false;
+					return !isDial
 				},
 			},
 			peerDiscovery: [
@@ -2060,7 +2072,7 @@ class webpeerjs{
 		
 		
 		//return webpeerjs class
-		return new webpeerjs(libp2p,dbstore,onMetrics,onWebsocketFn)
+		return new webpeerjs(libp2p,dbstore,onMetrics,onWebsocketFn,onDialFn)
 	}
 }
 

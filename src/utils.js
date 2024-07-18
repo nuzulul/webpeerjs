@@ -98,9 +98,12 @@ let lastStats = {
     open: 0
 }
 
+let fail = 0
 let isDialEnabled = true
 let lastfailtreshold = 0
-let fail = 0
+let isAutoDialEnabled = true
+let lastfailtresholdauto = 0
+
 
 export function metrics(data){
 	try{
@@ -156,32 +159,48 @@ export function metrics(data){
 		fail = errors+timeouts
 		const treshold = errors+timeouts+stats.open+stats.pending
 		
-		if(treshold>30){
-			//console.log(`Treeshold hit : ${treshold}`)
-		}
-		
-		if(fail>30){
-			//console.log(`Open : ${stats.open} , Pending : ${stats.pending} , Succes : ${totals.success} , Fail : ${fail} `)
-
-		}
-		
-		if ((fail-lastfailtreshold)>30){
+		if ((fail-lastfailtreshold)>config.CONFIG_DIAL_MAX_ERROR_LIMIT){
 			if(isDialEnabled){
 				isDialEnabled = false
-				//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
 				console.warn('Peer dial is temporary disabled')
+				if(isAutoDialEnabled){
+					isAutoDialEnabled = false
+					console.warn('Peer autodial is temporary disabled')
+				}
 				setTimeout(()=>{
 					if(!isDialEnabled){
 						isDialEnabled = true
 						lastfailtreshold = fail
-						//const str = JSON.stringify({isDialEnabled,fail,lastfailtreshold})
-						console.warn('Peer dial is enabled')
+						console.warn('Peer dial is resumed')
+						if(!isAutoDialEnabled){
+							isAutoDialEnabled = true
+							lastfailtresholdauto = fail
+							console.warn('Peer autodial is resumed')
+						}
+					}
+				},6*60*1000)
+			}
+		}
+
+		if ((fail-lastfailtresholdauto)>config.CONFIG_AUTODIAL_MAX_ERROR_LIMIT){
+			if(isAutoDialEnabled){
+				isAutoDialEnabled = false
+				console.warn('Peer autodial is temporary disabled')
+				const last = fail
+				setTimeout(()=>{
+					if(!isAutoDialEnabled && isDialEnabled){
+						isAutoDialEnabled = true
+						lastfailtresholdauto = fail
+						console.warn('Peer autodial is resumed')
+						if(isDialEnabled){
+							lastfailtreshold = last
+						}
 					}
 				},6*60*1000)
 			}
 		}
 		
-		return isDialEnabled
+		return {isDialEnabled,isAutoDialEnabled}
 		
 	}
 	catch{

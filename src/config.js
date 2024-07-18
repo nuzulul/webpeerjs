@@ -35,6 +35,8 @@ export const CONFIG_WEBRTC_TURN_USER_BACKUP1 = 'ZmZlNmIxOThjOGMxYjM5ODg1OWFiOGY4
 export const CONFIG_WEBRTC_TURN_PWD_BACKUP1 = 'aWpkQjVTcTIwREVsZzdDRg=='
 export const CONFIG_MESSAGE_SIZE_LIMIT = 100*1024 // 100KB
 export const CONFIG_DEBUG_ENABLED = false
+export const CONFIG_AUTODIAL_MAX_ERROR_LIMIT = 45
+export const CONFIG_DIAL_MAX_ERROR_LIMIT = 55
 
 // this list comes from https://github.com/ipfs/kubo/blob/196887cbe5fbcd41243c1dfb0db681a1cc2914ff/config/bootstrap_peers.go
 export const CONFIG_KNOWN_DEFAULT_BOOTSTRAP_ADDRESSES = [
