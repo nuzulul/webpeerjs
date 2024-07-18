@@ -28,7 +28,7 @@ const prefix = config.CONFIG_PREFIX
 export const mkErr = msg => new Error(`${prefix}: ${msg}`)
 
 export function mkDebug(msg){
-	console.debug(msg)
+	if(config.CONFIG_DEBUG_ENABLED)console.debug(msg)
 	return
 }
 
