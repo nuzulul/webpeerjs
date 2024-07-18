@@ -581,15 +581,16 @@ class webpeerjs{
 			//const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 			//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
 			const id = peer.id.toString()
-			const mddrs = []
-			peer.addresses.forEach((addr)=>{
-				const maddr = addr.multiaddr.toString()+'/p2p/'+id
-				if(maddr.includes('webtransport') && maddr.includes('certhash')){
-					mddrs.push(maddr)
+			const addrs = []
+			peer.addresses.forEach((address)=>{
+				const addr = address.multiaddr.toString()+'/p2p/'+id
+				if(addr.includes('webtransport') && addr.includes('certhash')){
+					addrs.push(addr)
 				}
 			})
-			//this.#ListenAddressChange(mddrs)
-			this.address = mddrs
+			if(!config.CONFIG_RUN_ON_TRANSIENT_CONNECTION)addrs.reverse()
+			//this.#ListenAddressChange(addrs)
+			this.address = addrs
 			this.#ping()
 			this.#peerDiscoveryHybrid()
 		})
