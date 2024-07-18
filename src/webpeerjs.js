@@ -1934,6 +1934,7 @@ class webpeerjs{
 			pc.createDataChannel('webpeerjs');
 			pc.createOffer().then(offer => pc.setLocalDescription(offer));
 		})
+		//console.log(ice)
 		
 		//create libp2p instance
 		const libp2p = await createLibp2p({

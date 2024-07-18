@@ -24,12 +24,15 @@ export const CONFIG_TIMEOUT_DIAL_KNOWN_PEERS = 15000
 export const CONFIG_RUN_ON_TRANSIENT_CONNECTION = false
 export const CONFIG_WEBRTC_STUN_URLS = 'stun:stun.l.google.com:19302'
 export const CONFIG_WEBRTC_STUN_URLS_BACKUP = 'stun:global.stun.twilio.com:3478'
-export const CONFIG_WEBRTC_TURN_HOST = 'dHVybjpyZWxheTEuZXhwcmVzc3R1cm4uY29tOjM0Nzg='
-export const CONFIG_WEBRTC_TURN_USER = 'ZWZJSllZNjdDNElRMzFZQUlP'
-export const CONFIG_WEBRTC_TURN_PWD = 'Vk01SmdhODlkYjJaWU9aSA=='
-export const CONFIG_WEBRTC_TURN_HOST_BACKUP = 'dHVybjpzdGFuZGFyZC5yZWxheS5tZXRlcmVkLmNhOjgw'
-export const CONFIG_WEBRTC_TURN_USER_BACKUP = 'ZmZlNmIxOThjOGMxYjM5ODg1OWFiOGY4'
-export const CONFIG_WEBRTC_TURN_PWD_BACKUP = 'aWpkQjVTcTIwREVsZzdDRg=='
+export const CONFIG_WEBRTC_TURN_HOST = 'dHVybjp0dXJuMDEuYnJpZS5maTo1MzQ5'
+export const CONFIG_WEBRTC_TURN_USER = 'YnJpZQ=='
+export const CONFIG_WEBRTC_TURN_PWD = 'Zmk='
+export const CONFIG_WEBRTC_TURN_HOST_BACKUP = 'dHVybjpyZWxheTEuZXhwcmVzc3R1cm4uY29tOjM0Nzg='
+export const CONFIG_WEBRTC_TURN_USER_BACKUP = 'ZWZJSllZNjdDNElRMzFZQUlP'
+export const CONFIG_WEBRTC_TURN_PWD_BACKUP = 'Vk01SmdhODlkYjJaWU9aSA=='
+export const CONFIG_WEBRTC_TURN_HOST_BACKUP1 = 'dHVybjpzdGFuZGFyZC5yZWxheS5tZXRlcmVkLmNhOjgw'
+export const CONFIG_WEBRTC_TURN_USER_BACKUP1 = 'ZmZlNmIxOThjOGMxYjM5ODg1OWFiOGY4'
+export const CONFIG_WEBRTC_TURN_PWD_BACKUP1 = 'aWpkQjVTcTIwREVsZzdDRg=='
 export const CONFIG_MESSAGE_SIZE_LIMIT = 10240 // 10KB
 
 // this list comes from https://github.com/ipfs/kubo/blob/196887cbe5fbcd41243c1dfb0db681a1cc2914ff/config/bootstrap_peers.go
