@@ -102,16 +102,20 @@ class webpeerjs{
 	//arr to track on connect event
 	#onConnectQueue
 	
+	//callback to websocket dialable
+	#onWebsocketFn
+	
 	id
 	status
 	IPFS
 	address
 	peers
 	
-	constructor(libp2p,dbstore,onMetrics){
+	constructor(libp2p,dbstore,onMetrics,onWebsocketFn){
 		
 		this.#libp2p = libp2p
 		this.#dbstore = dbstore
+		this.#onWebsocketFn = onWebsocketFn
 		this.#dbstoreData = new Map()
 		this.#discoveredPeers = new Map()
 		this.#webPeersId = []
@@ -1657,7 +1661,7 @@ class webpeerjs{
 
 	//dial based on known bootsrap peers address using Websocket expected
 	#dialKnownBootstrap(){
-		
+		//console.log('#dialKnownBootstrap()')
 		if(!navigator.onLine)return
 		if(!this.#isDialEnabled)return
 
@@ -1677,6 +1681,7 @@ class webpeerjs{
 			
 			this.#dialedKnownBootstrap.set(id,addrs)
 			this.#isDialWebsocket = true
+			this.#onWebsocketFn(true)
 			if(!this.#isConnected(id)){
 				this.#dialMultiaddress(mddrs)
 			}
@@ -1686,7 +1691,7 @@ class webpeerjs{
 	
 	//dial based on known bootstrap DNS
 	async #dialKnownDNS(){
-
+		//console.log('#dialKnownDNS()')
 		if(!navigator.onLine)return
 		if(!this.#isDialEnabled)return
 
@@ -1719,6 +1724,7 @@ class webpeerjs{
 			
 			this.#dialedKnownBootstrap.set(id,addrs)
 			this.#isDialWebsocket = true
+			this.#onWebsocketFn(true)
 			if(!this.#isConnected(id)){
 				this.#dialMultiaddress(mddrs)
 			}
@@ -1729,7 +1735,7 @@ class webpeerjs{
 	
 	//dial based on known bootstrap DNS using DNS resolver only
 	async #dialKnownDNSonly(){
-
+		console.log('#dialKnownDNSonly()')
 		if(!navigator.onLine)return
 		if(!this.#isDialEnabled)return
 
@@ -1766,6 +1772,7 @@ class webpeerjs{
 		
 		
 		this.#isDialWebsocket = true
+		this.#onWebsocketFn(true)
 		this.#dialedKnownBootstrap.set(id,addrs)
 		
 		this.#dialedKnownBootstrap.set(id,addrs)
@@ -1833,6 +1840,13 @@ class webpeerjs{
 
 		let onMetricsFn = () => {}
 		const onMetrics = f => (onMetricsFn = f)
+
+		let isWebsocket = false
+		let onWebsocketFn = () => {}
+		const onWebsocket = f => (onWebsocketFn = f)
+		onWebsocket((data)=>{
+			isWebsocket = data
+		})
 		
 		let listenaddress = []
 		
@@ -1988,6 +2002,7 @@ class webpeerjs{
 					) {
 						return false;
 					}
+					if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return isWebsocket
 					return true;
 				},
 				denyDialMultiaddr: async (multiaddrTest) => {
@@ -1998,6 +2013,7 @@ class webpeerjs{
 					) {
 						return true;
 					}
+					if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return !isWebsocket
 					return false;
 				},
 			},
@@ -2044,7 +2060,7 @@ class webpeerjs{
 		
 		
 		//return webpeerjs class
-		return new webpeerjs(libp2p,dbstore,onMetrics)
+		return new webpeerjs(libp2p,dbstore,onMetrics,onWebsocketFn)
 	}
 }
 
