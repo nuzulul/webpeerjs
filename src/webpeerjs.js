@@ -1856,7 +1856,7 @@ class webpeerjs{
 		let onDialFn = () => {}
 		const onDial = f => (onDialFn = f)
 		onDial((data)=>{
-			if(isDial!=data)console.warn('isDial',data)
+			//if(isDial!=data)console.warn('isDial',data)
 			isDial = data
 		})
 		

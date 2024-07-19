@@ -51,6 +51,28 @@ export async function first(farr){
 		}
 }
 
+//browser detector
+//this code comes from https://stackoverflow.com/a/9851769
+
+// Opera 8.0+
+const isOpera = (!!window.opr && !!opr.addons) || !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
+// Firefox 1.0+
+const isFirefox = typeof InstallTrigger !== 'undefined';
+// Safari 3.0+ "[object HTMLElementConstructor]" 
+const isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && window['safari'].pushNotification));
+// Internet Explorer 6-11
+const isIE = /*@cc_on!@*/false || !!document.documentMode;
+// Edge 20+
+const isEdge = !isIE && !!window.StyleMedia;
+// Chrome 1 - 79
+const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+// Edge (based on chromium) detection
+const isEdgeChromium = isChrome && (navigator.userAgent.indexOf("Edg") != -1);
+// Blink engine detection
+const isBlink = (isChrome || isOpera) && !!window.CSS;
+
+export const browser = {isOpera,isFirefox,isSafari,isIE,isEdge,isChrome,isEdgeChromium,isBlink}
+
 //Add id to pupsub message
 export async function msgIdFnStrictNoSign(msg){
   var enc = new TextEncoder()
@@ -106,6 +128,11 @@ let lastfailtresholdauto = 0
 
 
 export function metrics(data){
+	
+	if(isFirefox){
+		return {isDialEnabled,isAutoDialEnabled}
+	}
+	
 	try{
 		const webTransportEvents = data.libp2p_webtransport_dialer_events_total
 		
@@ -219,4 +246,9 @@ export async function getDigest(){
 	const buf = new TextEncoder().encode(Math.random().toString())
 	const digest = await sha256.encode(buf)
 	return digest
+}
+
+//detect webtranspot
+if(!WebTransport){
+	throw mkErr('It seems that your browser does not support the required WebTransport feature')
 }
