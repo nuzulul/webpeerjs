@@ -121,6 +121,7 @@ let lastStats = {
 }
 
 let fail = 0
+let lastfail = 0
 let isDialEnabled = true
 let lastfailtreshold = 0
 let isAutoDialEnabled = true
@@ -185,6 +186,20 @@ export function metrics(data){
 		
 		fail = errors+timeouts
 		//const treshold = errors+timeouts+stats.open+stats.pending
+		//console.log('fail',fail)
+		
+		//detect fail timeout, in chrome fail webtransport get reset after 5 minutes
+		if(lastfail>fail){
+			setTimeout(()=>{
+				if(isAutoDialEnabled){
+					lastfailtresholdauto = lastfailtresholdauto+(lastfail-fail)
+				}
+				if(isDialEnabled){
+					lastfailtreshold = lastfailtreshold+(lastfail-fail)
+				}
+			},5*60*1000)
+		}
+		lastfail = fail
 		
 		if ((fail-lastfailtreshold)>config.CONFIG_DIAL_MAX_ERROR_LIMIT){
 			if(isDialEnabled){
