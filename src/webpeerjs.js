@@ -92,6 +92,9 @@ class webpeerjs{
 	//message tracker avoid double
 	#msgIdtracker
 	
+	//inbound message time tracker
+	#msgTimeTracker
+	
 	//map of peer exchange data
 	#peerexchangedata
 	
@@ -104,6 +107,9 @@ class webpeerjs{
 	
 	//callback to websocket dialable
 	#onWebsocketFn
+	
+	//time tracker for sending message
+	#sendMessageTimeTracker
 	
 	id
 	status
@@ -133,11 +139,13 @@ class webpeerjs{
 		this.#trackDisconnect = new Map()
 		this.#dialQueue = []
 		this.#isDialEnabled = true
-		this.#msgIdtracker = []
+		this.#msgIdtracker = new Map()
 		this.#peerexchangedata = new Map()
 		this.#lastTimeConnectToNetwork = new Date().getTime()
 		this.#lastTimeReceiveData = new Date().getTime()
 		this.#onConnectQueue = []
+		this.#msgTimeTracker = new Map()
+		this.#sendMessageTimeTracker = 0
 		
 		this.peers = (function(f) {
 			return f
@@ -386,10 +394,17 @@ class webpeerjs{
 									}
 
 									//inbound message
+									//use #msgIdtracker to prevent double message
+									//use #msgTimeTracker to limit inbound message 1msg/s
 									if(message){
 										const msgID = msgId+id
-										if(!this.#msgIdtracker.includes(msgID)){
-											this.#msgIdtracker.push(msgID)
+										let oldmsgtime = 0
+										let newmsgtime = new Date().getTime()
+										if(this.#msgTimeTracker.has(id))oldmsgtime = this.#msgTimeTracker.get(id)
+										const msgtimelimit = 1000
+										if(!this.#msgIdtracker.has(msgID) && newmsgtime-oldmsgtime>msgtimelimit){
+											this.#msgIdtracker.set(msgID,newmsgtime)
+											this.#msgTimeTracker.set(id,newmsgtime)
 											this.#rooms[room].onMessage(message,id)
 										}
 									}
@@ -695,6 +710,7 @@ class webpeerjs{
 			this.#peerDiscoveryHybrid()
 			this.#trackHybridPeersConnection()
 			this.#trackWebpeerConnection()
+			this.#garbageCollectionMsgIdTracker()
 		},10e3)
 		
 
@@ -774,6 +790,11 @@ class webpeerjs{
 				onMessage : () => {},
 				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 				sendMessage : async (message) => {
+					const now = (new Date()).getTime()
+					if(now-this.#sendMessageTimeTracker < 1000){
+						throw mkErr('can not send more than 1 message/s')
+					}
+					this.#sendMessageTimeTracker = now
 					const msgId = (new Date()).getTime()
 					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
 					const arr = uint8ArrayFromString(data)
@@ -814,6 +835,15 @@ class webpeerjs{
 	/*
 	PRIVATE FUNCTION
 	*/
+	
+	#garbageCollectionMsgIdTracker(){
+		const limit = 60*1000
+		for(const msg of this.#msgIdtracker){
+			if(msg[1] > limit){
+				this.#msgIdtracker.delete(msg[0])
+			}
+		}
+	}
 	
 	//track hybrid peer connection and try to dial if not connected at least 1
 	#trackHybridPeersConnection(){
