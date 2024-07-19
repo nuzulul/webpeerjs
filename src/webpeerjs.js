@@ -88,7 +88,6 @@ class webpeerjs{
 	
 	//is dial enabled
 	#isDialEnabled
-	#isAutoDialEnabled
 	
 	//message tracker avoid double
 	#msgIdtracker
@@ -134,7 +133,6 @@ class webpeerjs{
 		this.#trackDisconnect = new Map()
 		this.#dialQueue = []
 		this.#isDialEnabled = true
-		this.#isAutoDialEnabled = true
 		this.#msgIdtracker = []
 		this.#peerexchangedata = new Map()
 		this.#lastTimeConnectToNetwork = new Date().getTime()
@@ -676,7 +674,6 @@ class webpeerjs{
 		onMetrics((data)=>{
 			const signal = metrics(data)
 			this.#isDialEnabled = signal.isDialEnabled
-			this.#isAutoDialEnabled = signal.isAutoDialEnabled
 			onDialFn(signal.isAutoDialEnabled)
 			
 		})
