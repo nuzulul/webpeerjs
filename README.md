@@ -3,7 +3,7 @@
 
 [WebPEER.js](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Build completely peer-to-peer web applications, no trackers or relay servers required. Connecting projects safely, privately, and reliably in WebPEER Network.
 
-[Basic Connection Demo](https://nuzulul.github.io/webpeerjs/demo/)
+[Basic Connection Demo - https://nuzulul.github.io/webpeerjs/demo/](https://nuzulul.github.io/webpeerjs/demo/)
 
 ## Security
 
@@ -21,9 +21,9 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * ✅ Censorship Resistant
 
 ## Browser Support
-![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) | ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) | ![Brave](https://raw.github.com/alrra/browser-logos/master/src/brave/brave_48x48.png) |
+![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) | ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) | ![Brave](https://raw.github.com/alrra/browser-logos/master/src/brave/brave_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png) |
 --- | --- | --- | --- | --- | --- |
-Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ |
+Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ❓ |
 
 ## Quickstart
 
@@ -46,7 +46,7 @@ Uses built-in JS files from [latest release](https://github.com/nuzulul/webpeerj
 <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.1/dist/umd/webpeerjs.min.js"></script>
 ```
 
-## Usage
+## Example
 
 ```
 import { webpeerjs } from 'webpeerjs'
