@@ -1982,39 +1982,46 @@ class webpeerjs{
 			})
 		}
 		
-		let ice = await checkice(stunurls,turnurls,turnusername,turncredential,5000)
-		
-		//console.log(ice)
-		
-		//recheck ice
-		if(!ice[0] && !ice[1]){
-			ice = await checkice(stunurlsbackup,turnurlsbackup,turnusernamebackup,turncredentialbackup,5000)
-		}else if (ice[0] && !ice[1]){
-			ice = await checkice(stunurls,turnurlsbackup,turnusernamebackup,turncredentialbackup,5000)
-		}else if (!ice[0] && ice[1]){
-			ice = await checkice(stunurlsbackup,turnurls,turnusername,turncredential,5000)
-		}
-		
-		//console.log(ice)
-		
-		//final ice remove false value
-		ice.forEach(function(value, index) {
-		  if(!value){
-			  this.splice(index, 1)
-		  }
-		}, ice);
-		
-		//console.log(ice)
+		let ice = []
 		
 		let configuration = {}
 		
 		if(arguments.length > 0){
 			configuration = arguments[0]
-		}else{
+		}
+		
+		//set rtc configuration
+		if(configuration.rtcConfiguration === undefined){
+			
+			ice = await checkice(stunurls,turnurls,turnusername,turncredential,5000)
+
+			//console.log(ice)
+			
+			//recheck ice
+			if(!ice[0] && !ice[1]){
+				ice = await checkice(stunurlsbackup,turnurlsbackup,turnusernamebackup,turncredentialbackup,5000)
+			}else if (ice[0] && !ice[1]){
+				ice = await checkice(stunurls,turnurlsbackup,turnusernamebackup,turncredentialbackup,5000)
+			}else if (!ice[0] && ice[1]){
+				ice = await checkice(stunurlsbackup,turnurls,turnusername,turncredential,5000)
+			}
+			
+			//console.log(ice)
+			
+			//final ice remove false value
+			ice.forEach(function(value, index) {
+			  if(!value){
+				  this.splice(index, 1)
+			  }
+			}, ice);
+			
+			//console.log(ice)
+			
 			configuration.rtcConfiguration = {
 				iceServers: ice,
 			}
 		}
+		
 		
 		//create libp2p instance
 		const libp2p = await createLibp2p({
