@@ -32,17 +32,17 @@
     "url": "git+https://github.com/nuzulul/webpeerjs.git"
   },
   "keywords": [
-    "p2p",
+    "webpeer",
+	"p2p",
+	"p2p-network",
+	"webpeer-network",
     "ipfs",
 	"libp2p",
     "peer",
     "peer-to-peer",
     "decentralized",
     "browser-to-browser",
-	"dapp",
 	"distributed",
-	"decentralized-web",
-	"distributed-web",
 	"serverless"
   ],
   "author": {

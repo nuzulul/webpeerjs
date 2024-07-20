@@ -1,13 +1,13 @@
 # WebPEER.js
 > Decentralized P2P JS library for communication between applications in browser.
 
-[WebPEER.js](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Build completely peer-to-peer web applications, no trackers or relay servers required. Connecting projects safely, privately, and reliably.
+[WebPEER.js](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Build completely peer-to-peer web applications, no trackers or relay servers required. Connecting projects safely, privately, and reliably in WebPEER Network.
 
 [Basic Connection Demo](https://nuzulul.github.io/webpeerjs/demo/)
 
 ## Security
 
-WebPEER.js uses [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/security-considerations/#publish--subscribe) to enables communication between peers. 
+WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/security-considerations/#publish--subscribe) protocol to enables communication between peers. 
 > By default, the gossipsub implementation will sign all messages with the author’s private key, and require a valid signature before accepting or propagating a message further. This prevents messages from being altered in flight, and allows recipients to authenticate the sender.
 
 > However, as a cooperative protocol, it may be possible for peers to interfere with the message routing algorithm in a way that disrupts the flow of messages through the network.
