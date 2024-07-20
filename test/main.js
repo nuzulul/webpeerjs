@@ -28,6 +28,11 @@ void async function main() {
 	}, 500)
 
 	nodeIdEl.innerHTML = node.id
+	
+	function testplugin(callback){
+		console.log('testplugin',callback.id)
+	}
+	node.plugin(testplugin)
 
 	const updateDiscoveredPeers = () => {
 	  discoveredPeerCountEl.innerHTML = node.IPFS.discoveredPeers.size

@@ -830,6 +830,10 @@ class webpeerjs{
 		mddrs.push(mddr)
 		this.#dialMultiaddress(mddrs)
 	}
+	
+	plugin(callback){
+		callback(this)
+	}
 
 
 	/*
