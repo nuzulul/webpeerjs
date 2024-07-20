@@ -73,7 +73,9 @@ void async function main() {
 
 ## API
 
-- `createWebpeer()` - Create a new node.
+- `createWebpeer(config)` - Create a new node.
+	- `config` - Configuration object contain:
+		- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport, the only transport available for direct peer-to-peer connectivity between browser.
 - `id` - The unique ID of the node as an identity in the global network.
 - `status` - Get the node status, returns `connected` or `unconnected`.
 - `peers` - Get all connected peers.

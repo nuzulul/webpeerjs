@@ -2002,6 +2002,16 @@ class webpeerjs{
 		
 		//console.log(ice)
 		
+		let configuration = {}
+		
+		if(arguments.length > 0){
+			configuration = arguments[0]
+		}else{
+			configuration.rtcConfiguration = {
+				iceServers: ice,
+			}
+		}
+		
 		//create libp2p instance
 		const libp2p = await createLibp2p({
 			addresses: {
@@ -2011,9 +2021,7 @@ class webpeerjs{
 				webTransport(),
 				webSockets(),
 				webRTC({
-					rtcConfiguration: {
-						iceServers: ice,
-					},
+					rtcConfiguration: configuration.rtcConfiguration,
 				}),
 				circuitRelayTransport({
 					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
