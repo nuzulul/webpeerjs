@@ -383,7 +383,7 @@ class webpeerjs{
 								this.#updatePeers()
 							}else{
 								//reset this last seen
-								const addr = this.#connectedPeers.get(id).addrs
+								let addr = this.#connectedPeers.get(id).addrs
 								if(address)addr = address
 								const now = new Date().getTime()
 								const metadata = {addrs:addr,last:now}
