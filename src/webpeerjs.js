@@ -1221,16 +1221,7 @@ class webpeerjs{
 			}
 			else{
 				if((nodePeerCount>(limitCount-5))||(allPeerCount>(config.CONFIG_MAX_CONNECTIONS-5))){
-					//close random peers
-					let peers = []
-					for(const peer of this.#libp2p.getPeers()){
-						peers.push(peer.toString())
-					}
-					const randomKey = Math.floor(Math.random() * peers.length)
-					const randompeerid = peers[randomKey]
-					if(!config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
-						await this.#libp2p.hangUp(peerIdFromString(randompeerid))
-					}
+					return
 				}
 			}
 			
