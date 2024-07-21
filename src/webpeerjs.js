@@ -1131,6 +1131,7 @@ class webpeerjs{
 
 		if(!navigator.onLine)return
 		if(!this.#isDialEnabled)return
+		if(this.#connectedPeers.size > 5)return
 
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
 			if(!this.#isConnected(target) && !this.#connections.has(target)){
