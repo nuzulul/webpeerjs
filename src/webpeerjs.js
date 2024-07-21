@@ -1240,7 +1240,7 @@ class webpeerjs{
 				}
 			}
 			
-			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
+			if(this.#webPeersId.includes(id) || config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS.includes(id)){
 				this.#dialQueue.unshift(mddrs)
 			}
 			else{
@@ -1422,19 +1422,9 @@ class webpeerjs{
 				}
 			}
 		},45*1000)
-	}
-	
-	
-	//track for good connection
-	async #connectionTracker(){
+	}	
 		
-		for await (const { key, value } of this.#dbstore.query({})) {
-			const id = key.toString().split('/')[1]
-			const addr = new TextDecoder().decode(value)
-			this.#dbstoreData.set(id,addr)
-		}	
-		
-		setInterval(async ()=>{
+	async #checkConnectionAll(){
 			
 			//save peer address if connection is good
 			const connections = this.#libp2p.getConnections()
@@ -1462,12 +1452,26 @@ class webpeerjs{
 				
 			}
 			
+			const shuffle = (array) => { 
+			  for (let i = array.length - 1; i > 0; i--) { 
+				const j = Math.floor(Math.random() * (i + 1)); 
+				[array[i], array[j]] = [array[j], array[i]]; 
+			  } 
+			  return array; 
+			}; 
 			
 			//connect to saved best peer address
 			//working great
-			for(const peer of this.#dbstoreData){
-				const id = peer[0]
-				const addr = peer[1]
+			const bestall = Array.from(this.#dbstoreData.keys())
+			const bestshuffle = shuffle(bestall)
+			const best = bestshuffle.slice(0, 10)
+			for(const hybrid of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
+				if(best.includes(hybrid))continue
+				if(!bestall.includes(hybrid))continue
+				best.unshift(hybrid)
+			}
+			for(const id of best){
+				const addr = this.#dbstoreData.get(id)
 				if(this.#isConnected(id)){
 					this.#connectionTrackerStore.set(id,0)
 					continue
@@ -1495,6 +1499,7 @@ class webpeerjs{
 					let mddrs = []
 					const mddr = multiaddr(addr)
 					mddrs.push(mddr)
+					//console.log(id,addr)
 					this.#dialMultiaddress(mddrs)
 				}
 			}
@@ -1520,7 +1525,20 @@ class webpeerjs{
 					}
 				}
 			}
-			
+	}
+	//track for good connection
+	async #connectionTracker(){
+		
+		for await (const { key, value } of this.#dbstore.query({})) {
+			const id = key.toString().split('/')[1]
+			const addr = new TextDecoder().decode(value)
+			this.#dbstoreData.set(id,addr)
+		}		
+		
+		this.#checkConnectionAll()
+		
+		setInterval(async ()=>{	
+			this.#checkConnectionAll()
 		},15*1000)
 	}
 
