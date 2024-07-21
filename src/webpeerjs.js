@@ -217,18 +217,22 @@ class webpeerjs{
 				let address = [addr]
 
 				if(this.#connectedPeers.has(id)){
-					//reset this last seen
-					const now = new Date().getTime()
-					const metadata = {addrs:address,last:now}
-					this.#connectedPeers.set(id,metadata)
+					if(this.#lastTimeReceiveData < 10*1000){
+						//reset this last seen
+						const now = new Date().getTime()
+						const metadata = {addrs:address,last:now}
+						this.#connectedPeers.set(id,metadata)
+					}
 				}
-				else if(this.#lastTimeReceiveData < 10*1000){
-					//add to connected webpeers
-					this.#onConnectFnUpdate(id)
-					const now = new Date().getTime()
-					const metadata = {addrs:address,last:now}
-					this.#connectedPeers.set(id,metadata)
-					this.#updatePeers()
+				else {
+					if(this.#lastTimeReceiveData < 10*1000){
+						//add to connected webpeers
+						this.#onConnectFnUpdate(id)
+						const now = new Date().getTime()
+						const metadata = {addrs:address,last:now}
+						this.#connectedPeers.set(id,metadata)
+						this.#updatePeers()
+					}
 				}
 
 			}
@@ -273,20 +277,24 @@ class webpeerjs{
 						if(this.#webPeersId.includes(senderPeerId)){
 							
 							if(this.#connectedPeers.has(senderPeerId)){
-								//reset this last seen
-								const address = this.#connectedPeers.get(senderPeerId).addrs
-								const now = new Date().getTime()
-								const metadata = {addrs:address,last:now}
-								this.#connectedPeers.set(senderPeerId,metadata)
+								if(this.#lastTimeReceiveData < 10*1000){
+									//reset this last seen
+									const address = this.#connectedPeers.get(senderPeerId).addrs
+									const now = new Date().getTime()
+									const metadata = {addrs:address,last:now}
+									this.#connectedPeers.set(senderPeerId,metadata)
+								}
 							}
-							else if(this.#lastTimeReceiveData < 10*1000){
-								//add to connected webpeers
-								this.#onConnectFnUpdate(senderPeerId)
-								const address = this.#webPeersAddrs.get(senderPeerId)
-								const now = new Date().getTime()
-								const metadata = {addrs:address,last:now}
-								this.#connectedPeers.set(senderPeerId,metadata)
-								this.#updatePeers()
+							else {
+								if(this.#lastTimeReceiveData < 10*1000){
+									//add to connected webpeers
+									this.#onConnectFnUpdate(senderPeerId)
+									const address = this.#webPeersAddrs.get(senderPeerId)
+									const now = new Date().getTime()
+									const metadata = {addrs:address,last:now}
+									this.#connectedPeers.set(senderPeerId,metadata)
+									this.#updatePeers()
+								}
 							}
 
 							//dial if not connected
@@ -374,6 +382,13 @@ class webpeerjs{
 								}
 								this.#updatePeers()
 							}else{
+								//reset this last seen
+								const addr = this.#connectedPeers.get(id).addrs
+								if(address)addr = address
+								const now = new Date().getTime()
+								const metadata = {addrs:addr,last:now}
+								this.#connectedPeers.set(id,metadata)
+								//update address
 								if(address){
 									if(address.length > 0){
 										this.#webPeersAddrs.set(id,address)
@@ -1150,7 +1165,7 @@ class webpeerjs{
 	
 	//check the last seen in web peer
 	#trackLastSeen(){
-		const timeout = 10*1000
+		const timeout = 20*1000
 		const forcetimeout = 60*1000
 		const now = new Date().getTime()
 		
@@ -1160,7 +1175,7 @@ class webpeerjs{
 			const last = peer[1].last
 			const time = now-last
 			if((time>timeout && !this.#isConnected(id))||(time>forcetimeout)){
-				
+				//console.log('time',time)
 				this.#connectedPeers.delete(id)
 				this.#updatePeers()
 				this.#onDisconnectFn(id)
