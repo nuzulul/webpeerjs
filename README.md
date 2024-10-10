@@ -3,7 +3,9 @@
 
 [WebPEER.js](https://github.com/nuzulul/webpeerjs) enables browser to browser connectivity without a central server. Build completely peer-to-peer web applications, no trackers or relay servers required. Connecting projects safely, privately, and reliably in WebPEER Network.
 
-[Basic Connection Demo - https://nuzulul.github.io/webpeerjs/demo/](https://nuzulul.github.io/webpeerjs/demo/)
+Basic Connection Demo available at : [https://nuzulul.github.io/webpeerjs/demo/](https://nuzulul.github.io/webpeerjs/demo/)
+
+Basic Chat App Demo available at : [https://nuzulul.github.io/webpeerjs/demo/chat.html](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
 ## Security
 
@@ -57,13 +59,13 @@ void async function main() {
 	
 	console.log(`My node id : ${node.id}`)
 	
-	const [broadcast,listen,members] = node.joinRoom('globalroom')
+	const [broadcast,listen,onmembersupdate] = node.joinRoom('globalroom')
 	
 	listen((message,id) => {
 		console.log(`Message from ${id} : ${message}`)
 	})
 	
-	members((data) => {
+	onmembersupdate((data) => {
 		console.log(`Members : ${data}`)
 		broadcast('hello')
 	})
@@ -75,11 +77,14 @@ void async function main() {
 
 - `createWebpeer(config)` - Create a new node.
 	- `config` - Configuration object contain:
-		- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport, the only transport available for direct peer-to-peer connectivity between browser.
-- `id` - The unique ID of the node as an identity in the global network.
+		- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport, currently the only transport available for direct peer-to-peer connectivity between browser.
+- `id` - Get the unique ID of the node as an identity in the global network.
 - `status` - Get the node status, returns `connected` or `unconnected`.
 - `peers` - Get all connected peers.
 - `joinRoom(namespace)` - Join to the room, returns an array of three functions (Broadcaster, onListenBroadcast, onMembersUpdate).
+	- `Broadcaster` - Function to broadcast message to room members (limited to 1 message/second).
+	- `onListenBroadcast` - Callback function that listen on incoming broadcast message.
+	- `onMembersUpdate` - Callback function that listen on room members update.
 
 ## API Docs
 
