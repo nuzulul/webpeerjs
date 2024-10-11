@@ -1,7 +1,7 @@
 # WebPEER
 > Decentralized P2P network overlay inside browser
 
-[WebPEERjs](https://github.com/nuzulul/webpeerjs) library enables browser to browser connectivity without a central server. Instant build completely peer-to-peer network embeded in your web applications, no trackers or relay servers required. Connecting projects safely, privately, and reliably in the global WebPEER Network.
+[WebPEER js](https://github.com/nuzulul/webpeerjs) library enables browser to browser connectivity without a central server. Instant build completely peer-to-peer network embeded in your web applications with scalable peers, no trackers or relay servers required. Connecting projects safely, privately, and reliably in the global WebPEER Network.
 
 Basic Connection Demo available at : [https://nuzulul.github.io/webpeerjs/demo/](https://nuzulul.github.io/webpeerjs/demo/)
 
