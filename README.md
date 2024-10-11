@@ -7,6 +7,8 @@ Basic Connection Demo available at : [https://nuzulul.github.io/webpeerjs/demo/]
 
 Basic Chat App Demo available at : [https://nuzulul.github.io/webpeerjs/demo/chat.html](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
+![WebPEER](webpeer.png)
+
 ## Security
 
 WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/security-considerations/#publish--subscribe) protocol to enables communication between peers. 
