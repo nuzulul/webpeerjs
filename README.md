@@ -1,9 +1,7 @@
 # WebPEER
-> Decentralized P2P network overlay inside browser
+> Decentralized P2P network overlay in browser-side
 
-[WebPEER js](https://github.com/nuzulul/webpeerjs) library enables browser to browser connectivity without a central server. Instant build completely peer-to-peer network embeded in your web applications with scalable peers, no trackers or relay servers required. Connecting projects safely, privately, and reliably in the global WebPEER Network.
-
-Basic Connection Demo available at : [https://nuzulul.github.io/webpeerjs/demo/](https://nuzulul.github.io/webpeerjs/demo/)
+[WebPEER js](https://github.com/nuzulul/webpeerjs) library enables p2p connectivity without a central server in browser-side. Instant build completely peer-to-peer network embeded in your web applications with scalable peers, no trackers or relay servers required. Connecting projects safely, privately, and reliably in the global WebPEER Network.
 
 Basic Chat App Demo available at : [https://nuzulul.github.io/webpeerjs/demo/chat.html](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
@@ -105,13 +103,19 @@ void async function main() {
 - `status` - Get the node status, returns `connected` or `unconnected`.
 - `peers` - Get all connected peers.
 - `joinRoom(namespace)` - Join to the room, returns an array of three functions, example : [Broadcaster, onListenBroadcast, onMembersUpdate].
-	- `Broadcaster` - Function to broadcast message to room members (limited to 1 message/second as anti DOS mitigation).
+	- `Broadcaster` - Function to broadcast message to room members.
+		- Limited to 1 message/second.
 	- `onListenBroadcast` - Callback function that listen on incoming broadcast message.
 	- `onMembersUpdate` - Callback function that listen on room members update.
 
 ## API Docs
 
 [https://nuzulul.github.io/webpeerjs](https://nuzulul.github.io/webpeerjs)
+
+## Related
+
+- [webConnect.js](https://github.com/nuzulul/webConnect.js) - Auto WebRTC Mesh P2P network without any hassle.
+- [RingsNetwork](https://github.com/RingsNetwork/rings) - Rings is a structured peer-to-peer network implementation using WebRTC, Chord DHT, and full WebAssembly (WASM) support.
 
 ## License
 
