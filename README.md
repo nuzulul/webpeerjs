@@ -1,7 +1,7 @@
 # WebPEER
-> Decentralized P2P network overlay in browser-side
+> WebPEER is a P2P Network that Runs in a Browser
 
-[WebPEER js](https://github.com/nuzulul/webpeerjs) library enables p2p connectivity without a central server in browser-side. Instant build completely peer-to-peer network embeded in your web applications with scalable peers, no trackers or relay servers required. Connecting projects safely, privately, and reliably in the global WebPEER Network.
+This [webpeerjs](https://github.com/nuzulul/webpeerjs) library implements libp2p to create decentralized peer-to-peer network that runs in a browser without a central server.
 
 Basic Chat App Demo available at : [https://nuzulul.github.io/webpeerjs/demo/chat.html](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
