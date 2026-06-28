@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebPEER.js</title>
+    <title>WebPEER</title>
 	<style>
 	#app{
 		border:1px solid grey;
@@ -106,7 +106,7 @@
 	</style>
   </head>
   <body>
-    <p><a href="https://github.com/nuzulul/webpeerjs">WebPEER.js</a> Chat Demo | <a href="index.html">basic</a></p>
+    <p><a href="https://github.com/nuzulul/webpeerjs">WebPEER</a> Chat Demo | <a href="index.html">basic</a></p>
 	<div id="app">
 		<div id="members">
 			<div id="counter">
@@ -128,43 +128,54 @@
 			</div>
 		<div>
 	</div>
-    <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.1/dist/umd/webpeerjs.min.js"></script>
-	<script>
-		void async function main() {
-
+	<script type="importmap">
+	{
+		"imports": {
+			"webpeerjs" : "https://esm.sh/webpeerjs"
+		}
+	}
+	</script>
+	<script type="module">
+		
+			import { createWebPEER } from 'webpeerjs';
+			
 			function write(input){
-				const node = document.createElement("li")
-				const textnode = document.createTextNode(input)
-				node.appendChild(textnode)
-				document.getElementById("myList").appendChild(node)
+				const node = document.createElement("li");
+				const textnode = document.createTextNode(input);
+				node.appendChild(textnode);
+				document.getElementById("myList").appendChild(node);
 				var objDiv = document.getElementById("myList");
 				objDiv.scrollTop = objDiv.scrollHeight;
 			}
+			
+			const config = {
+				networkName : 'p2pchat'
+			}					
 
-			const node = await webpeerjs.createWebpeer()
+			const peer = await createWebPEER();
 			
-			const room = 'globalroom'
+			const roomname = 'lobbyroom';
 			
-			const [broadcast,listen,members] = node.joinRoom(room)
+			const room = peer.joinRoom(config);
 			
-			listen((message,id) => {
-			const user = id.slice(-6)
-				write(`${user} : ${message}`)
+			room.onMessage((message,id) => {
+				const user = id.slice(-6);
+				write(`${user} : ${message}`);
 			})
 			
-			members((data) => {
-				document.getElementById('number').innerText = data.length
-				let users = ''
+			room.onMembersChange((data) => {
+				document.getElementById('number').innerText = data.length;
+				let users = '';
 				for(const user of data){
-					users+=user.slice(-6)
-					users+=', '
+					users+=user.slice(-6);
+					users+=', ';
 				}
-				document.getElementById('users').innerText = users
-				broadcast('hello')
+				document.getElementById('users').innerText = users;
+				room.sendMessage('hello');
 			})
 			
 			setInterval(()=>{
-				const status = node.status
+				const status = peer.status;
 				if(status == 'connected'){
 					document.getElementById("indicator").style.backgroundColor = "green";
 				}else{
@@ -173,13 +184,13 @@
 			},500)
 			
 			document.getElementById("send").onclick = ()=>{
-				const msg = document.getElementById("type").value
+				const msg = document.getElementById("type").value;
 				
 				if(node.status == 'connected'){
-					document.getElementById("type").value = ''
-					const self = node.id.slice(-6)
-					write(`${self} (me): ${msg}`)
-					broadcast(msg)
+					document.getElementById("type").value = '';
+					const self = node.id.slice(-6);
+					write(`${self} (me): ${msg}`);
+					room.sendMessage(msg);
 				}
 			}
 
@@ -190,7 +201,7 @@
 					document.getElementById("send").click();
 				}
 			});
-		}()
+		
 	</script>
   </body>
 </html>

@@ -3,42 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebPEER.js</title>
+    <title>WebPEER</title>
   </head>
   <body>
-    <p><a href="https://github.com/nuzulul/webpeerjs">WebPEER.js</a> Basic Connection Demo | <a href="chat.html">chat</a></p>
+    <p><a href="https://github.com/nuzulul/webpeerjs">WebPEER</a> Basic Connection Demo | <a href="chat.html">chat</a></p>
 	<div id="app"><ul id="myList"></ul></div>
-    <script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.1/dist/umd/webpeerjs.min.js"></script>
-	<script>
-		void async function main() {
+	<script type="importmap">
+	{
+		"imports": {
+			"webpeerjs" : "https://esm.sh/webpeerjs"
+		}
+	}
+	</script>
+	<script type="module">
 
+			import { createWebPEER } from 'webpeerjs';
+			
 			function write(input){
-				const node = document.createElement("li")
-				const textnode = document.createTextNode(input)
-				node.appendChild(textnode)
-				document.getElementById("myList").appendChild(node)
+				const node = document.createElement("li");
+				const textnode = document.createTextNode(input);
+				node.appendChild(textnode);
+				document.getElementById("myList").appendChild(node);
 			}
+			
+			const config = {
+				networkName : 'myNetwork'
+			}			
 
-			const node = await webpeerjs.createWebpeer()
+			const peer = await createWebPEER(config);
 			
-			write(`My node id : ${node.id}`)
+			write(`My node id : ${peer.id}`);
 			
-			const room = 'globalroom'
+			const roomname = 'globalroom';
 			
-			write(`joinRoom : ${room}`)
+			const room = peer.joinRoom(roomname);
 			
-			const [broadcast,listen,members] = node.joinRoom(room)
+			write(`joinRoom : ${roomname}`);
 			
-			listen((message,id) => {
-				write(`Message from ${id} : ${message}`)
+			room.onMessage((message,id) => {
+				write(`Message from ${id} : ${message}`);
 			})
 			
-			members((data) => {
-				write(`Members update : ${data}`)
-				broadcast('hello')
+			room.onMembersChange((data) => {
+				write(`Members update : ${data}`);
+				room.sendMessage('hello');
 			})
 			
-		}()
 	</script>
   </body>
 </html>
