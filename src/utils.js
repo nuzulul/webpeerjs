@@ -1,7 +1,7 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
 
-import * as config from  './config'
-import { Peer as PBPeer } from './peer'
+import * as config from  './config.js'
+import { Peer as PBPeer } from './peer.js'
 import { Key } from 'interface-datastore'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { multiaddr } from '@multiformats/multiaddr'

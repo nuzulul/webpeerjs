@@ -1,6 +1,6 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
 
-import * as config from  './config'
+import * as config from  './config.js'
 import { 
 	mkErr,
 	PBPeer,
@@ -16,8 +16,8 @@ import {
 	pipe,
 	lp,
 	map
-} from './utils'
-import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
+} from './utils.js'
+import { delegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { createLibp2p } from 'libp2p'
 import { IDBDatastore } from 'datastore-idb'
 import { webTransport } from '@libp2p/webtransport'
@@ -26,13 +26,16 @@ import { webRTC } from '@libp2p/webrtc'
 import { dcutr } from '@libp2p/dcutr'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+//import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { identify, identifyPush } from '@libp2p/identify'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { simpleMetrics } from '@libp2p/simple-metrics'
+import { ping } from '@libp2p/ping';
+import { defaultLogger } from '@libp2p/logger';
+import {createSignalingServer} from 'signalingserver.js';
 
 
 class webpeerjs{
@@ -127,7 +130,7 @@ class webpeerjs{
 		this.#webPeersId = []
 		this.#webPeersAddrs = new Map()
 		this.#dialedGoodPeers = new Map()
-		this.#isDialWebsocket = false
+		this.#isDialWebsocket = false;
 		this.#dialedKnownBootstrap = new Map()
 		//this.#dialedDiscoveredPeers = []
 		this.address = []
@@ -171,6 +174,10 @@ class webpeerjs{
 		for(const topic of config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID){
 			this.#libp2p.services.pubsub.subscribe(topic)
 		}		
+		
+		if(config.CONFIG_DEBUG_ENABLED){
+			localStorage.setItem('debug', 'libp2p:*');
+		}
 		
 		//listen to peer connect event
 		this.#libp2p.addEventListener("peer:connect",async (evt) => {
@@ -612,8 +619,11 @@ class webpeerjs{
 		
 		//listen to self peer update
 		this.#libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
+			
+			console.log('peer',peer)
 			//const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 			//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
+			
 			const id = peer.id.toString()
 			const addrs = []
 			peer.addresses.forEach((address)=>{
@@ -1128,6 +1138,8 @@ class webpeerjs{
 	}
 	
 	async #findHybridPeer(){
+		
+		return;
 
 		if(!navigator.onLine)return
 		if(!this.#isDialEnabled)return
@@ -1622,7 +1634,7 @@ class webpeerjs{
 		if(firsttime){
 			for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 				const api = config.CONFIG_DELEGATED_API
-				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
+				const delegatedClient = delegatedRoutingV1HttpApiClient({url:api})({logger: defaultLogger()})
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
 				if(!peer)continue
 				const address = peer.Addrs
@@ -1657,7 +1669,7 @@ class webpeerjs{
 			if(!this.#connections.has(target) && (this.#dbstoreData.has(target) || firsttime)){
 				//console.log('#dialUpdateSavedKnownID()',target)
 				const api = config.CONFIG_DELEGATED_API
-				const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
+				const delegatedClient = delegatedRoutingV1HttpApiClient({url:api})({logger: defaultLogger()})
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
 				if(!peer){
 					if (navigator.onLine) {
@@ -1693,7 +1705,7 @@ class webpeerjs{
 		
 		//console.log('#dialKnownID()')
 		const api = config.CONFIG_DELEGATED_API
-		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
+		const delegatedClient = delegatedRoutingV1HttpApiClient({url:api})({logger: defaultLogger()})
 		const BOOTSTRAP_PEER_IDS = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS
 		const peers = await Promise.all(
 			BOOTSTRAP_PEER_IDS.map((peerId) => first(delegatedClient.getPeers(peerIdFromString(peerId)))),
@@ -1766,7 +1778,7 @@ class webpeerjs{
 			BOOTSTRAP_PEER_IDS.push(id)
 		}
 		const api = config.CONFIG_DELEGATED_API
-		const delegatedClient = createDelegatedRoutingV1HttpApiClient(api)
+		const delegatedClient = delegatedRoutingV1HttpApiClient({url:api})({logger: defaultLogger()})
 		const peers = await Promise.all(
 			BOOTSTRAP_PEER_IDS.map((peerId) => first(delegatedClient.getPeers(peerIdFromString(peerId)))),
 		)
@@ -1845,7 +1857,7 @@ class webpeerjs{
 	
 	//dial only webtransport multiaddrs
 	async #dialWebtransport(multiaddrs){
-			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('webtransport')&&maddr.protoNames().includes('certhash'))
+			const webTransportMadrs = multiaddrs.filter((maddr) => maddr.toString().includes('webtransport')&&maddr.toString().includes('certhash'))
 			  for (const mddr of webTransportMadrs) {
 				try {
 				  //console.log(`attempting to dial webtransport multiaddr: %o`, mddr.toString())
@@ -1860,7 +1872,7 @@ class webpeerjs{
 	
 	//dial only websocket multiaddrs
 	async #dialWebsocket(multiaddrs){
-			const webSocketMadrs = multiaddrs.filter((maddr) => maddr.protoNames().includes('wss'))
+			const webSocketMadrs = multiaddrs.filter((maddr) => maddr.toString().includes('wss'))
 			  for (const mddr of webSocketMadrs) {
 				try {
 				  //console.log(`attempting to dial websocket multiaddr: %o`, mddr)
@@ -1916,7 +1928,7 @@ class webpeerjs{
 			isDial = data
 		})
 		
-		let listenaddress = []
+		let listenaddress = ['/p2p-circuit']
 		
 		if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == false){
 			listenaddress.push('/webrtc')
@@ -2081,7 +2093,7 @@ class webpeerjs{
 				maxPeerAddrsToDial:2,
 				inboundUpgradeTimeout:5e3
 			},
-			connectionEncryption: [noise()],
+			connectionEncrypters: [noise()],
 			streamMuxers: [
 				yamux({
 					maxInboundStreams: 100,
@@ -2113,11 +2125,11 @@ class webpeerjs{
 				},
 			},
 			peerDiscovery: [
-				pubsubPeerDiscovery({
+				/*pubsubPeerDiscovery({
 					interval: 5_000,
 					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
 					listenOnly: false,
-				}),
+				}),*/
 				
 			],
 			services: {
@@ -2128,6 +2140,7 @@ class webpeerjs{
 					runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION,
 				}),
 				identify: identify(),
+				ping: ping(),
 				identifyPush: identifyPush(),
 				aminoDHT: kadDHT({
 					protocol: '/ipfs/kad/1.0.0',

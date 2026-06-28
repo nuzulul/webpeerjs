@@ -1,13 +1,13 @@
 {
   "name": "webpeerjs",
   "version": "0.1.10",
+  "type": "module",
   "description": "WebPEER.js is Decentralized P2P network overlay inside browser.",
-  "main": "./dist/umd/webpeerjs.js",
-  "module": "./src/webpeerjs.js",
+  "main": "./src/webpeer.js",
+  "module": "./src/webpeer.js",
   "exports": {
     ".": {
-      "import": "./src/webpeerjs.js",
-      "require": "./dist/umd/webpeerjs.js"
+      "import": "./src/webpeer.js"
     }
   },
   "files": [
@@ -16,15 +16,6 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "npm run dev",
-    "dev": "vite serve test",
-    "demo": "vite serve demo",
-    "eslint": "eslint -c ./config/eslint.config.mjs ./src",
-    "eslint:fix": "eslint -c ./config/eslint.config.mjs ./src --fix",
-    "removedir": "node -e \"var fs = require('fs'); try{process.argv.slice(1).map((fpath) => fs.rmdirSync(fpath, { recursive: true }))}catch(err){console.log(`Dist not found`)}; process.exit(0);\"",
-    "build-all": "tsc -p config/tsconfig-rollup.json && rollup -c temp/config/rollup.config.build.js && echo {\"type\": \"commonjs\"}>dist\\umd\\package.json && echo {\"type\": \"module\"}>dist\\esm\\package.json",
-    "build-types": "tsc -p config/tsconfig-esm.json",
-    "build": "npm run removedir dist temp && npm run build-all",
     "test": "cd test && cd project && npm start"
   },
   "repository": {
@@ -33,17 +24,17 @@
   },
   "keywords": [
     "webpeer",
-	"p2p",
-	"p2p-network",
-	"webpeer-network",
+    "p2p",
+    "p2p-network",
+    "webpeer-network",
     "ipfs",
-	"libp2p",
+    "libp2p",
     "peer",
     "peer-to-peer",
     "decentralized",
     "browser-to-browser",
-	"distributed",
-	"serverless"
+    "distributed",
+    "serverless"
   ],
   "author": {
     "name": "Nuzulul Zulkarnain",
@@ -55,34 +46,33 @@
   },
   "homepage": "https://github.com/nuzulul/webpeerjs#readme",
   "dependencies": {
-    "@chainsafe/libp2p-gossipsub": "^13.0.0",
-    "@chainsafe/libp2p-noise": "^15.0.0",
-    "@chainsafe/libp2p-yamux": "^6.0.2",
-    "@helia/delegated-routing-v1-http-api-client": "^3.0.1",
-    "@libp2p/circuit-relay-v2": "^1.0.24",
-    "@libp2p/dcutr": "^1.1.0",
-    "@libp2p/identify": "^2.0.2",
-    "@libp2p/kad-dht": "^12.0.17",
-    "@libp2p/peer-id": "^4.1.2",
-    "@libp2p/pubsub-peer-discovery": "^10.0.2",
-    "@libp2p/simple-metrics": "^1.0.2",
-    "@libp2p/webrtc": "^4.1.0",
-    "@libp2p/websockets": "^8.1.0",
-    "@libp2p/webtransport": "^4.0.32",
-    "datastore-idb": "^2.1.9",
-    "libp2p": "^1.6.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.4.0",
-    "@rollup/plugin-commonjs": "^25.0.8",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.6",
-    "eslint": "^9.4.0",
-    "globals": "^15.3.0",
-    "rollup": "^4.18.0",
-    "tslib": "^2.6.2",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.11"
+    "@chainsafe/libp2p-gossipsub": "^14.1.2",
+    "@chainsafe/libp2p-noise": "^17.0.0",
+    "@chainsafe/libp2p-yamux": "^8.0.1",
+    "@helia/delegated-routing-v1-http-api-client": "^8.0.1",
+    "@libp2p/circuit-relay-v2": "^4.2.7",
+    "@libp2p/dcutr": "^3.0.22",
+    "@libp2p/identify": "^4.1.8",
+    "@libp2p/kad-dht": "^16.3.3",
+    "@libp2p/logger": "^6.2.9",
+    "@libp2p/peer-id": "^6.0.11",
+    "@libp2p/ping": "^3.1.7",
+    "@libp2p/pubsub-peer-discovery": "^12.0.0",
+    "@libp2p/simple-metrics": "^2.0.17",
+    "@libp2p/webrtc": "^6.0.25",
+    "@libp2p/websockets": "^10.1.15",
+    "@libp2p/webtransport": "^6.0.30",
+    "@multiformats/multiaddr": "^13.0.3",
+    "datastore-idb": "^5.0.1",
+    "interface-datastore": "^10.0.1",
+    "it-length-prefixed": "^11.0.1",
+    "it-length-prefixed-stream": "^3.0.0",
+    "it-map": "^3.1.6",
+    "it-pipe": "^3.0.1",
+    "libp2p": "^3.3.4",
+    "multiformats": "^14.0.2",
+    "protons-runtime": "^7.0.0",
+    "signalingserver.js": "^0.0.6",
+    "uint8arrays": "^6.1.1"
   }
 }

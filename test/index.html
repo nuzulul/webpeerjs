@@ -4,6 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>webpeerjs</title>
+<script type="importmap">
+  {
+    "imports": {
+		"@chainsafe/libp2p-gossipsub": "https://esm.sh/@chainsafe/libp2p-gossipsub@14.1.2",
+		"@chainsafe/libp2p-noise": "https://esm.sh/@chainsafe/libp2p-noise@17.0.0",
+		"@chainsafe/libp2p-yamux": "https://esm.sh/@chainsafe/libp2p-yamux@8.0.1",
+		"@helia/delegated-routing-v1-http-api-client": "https://esm.sh/@helia/delegated-routing-v1-http-api-client@8.0.1",
+		"@libp2p/circuit-relay-v2": "https://esm.sh/@libp2p/circuit-relay-v2@4.2.7",
+		"@libp2p/dcutr": "https://esm.sh/@libp2p/dcutr@3.0.22",
+		"@libp2p/identify": "https://esm.sh/@libp2p/identify@4.1.8",
+		"@libp2p/kad-dht": "https://esm.sh/@libp2p/kad-dht@16.3.3",
+		"@libp2p/logger": "https://esm.sh/@libp2p/logger@6.2.9",
+		"@libp2p/peer-id": "https://esm.sh/@libp2p/peer-id@6.0.11",
+		"@libp2p/ping": "https://esm.sh/@libp2p/ping@3.1.7",
+		"@libp2p/pubsub-peer-discovery": "https://esm.sh/@libp2p/pubsub-peer-discovery@12.0.0",
+		"@libp2p/simple-metrics": "https://esm.sh/@libp2p/simple-metrics@2.0.17",
+		"@libp2p/webrtc": "https://esm.sh/@libp2p/webrtc@6.0.25",
+		"@libp2p/websockets": "https://esm.sh/@libp2p/websockets@10.1.15",
+		"@libp2p/webtransport": "https://esm.sh/@libp2p/webtransport@6.0.30",
+		"@multiformats/multiaddr": "https://esm.sh/@multiformats/multiaddr@13.0.3",
+		"datastore-idb": "https://esm.sh/datastore-idb@5.0.1",
+		"interface-datastore": "https://esm.sh/interface-datastore@10.0.1",
+		"it-length-prefixed": "https://esm.sh/it-length-prefixed@11.0.1",
+		"it-length-prefixed-stream": "https://esm.sh/it-length-prefixed-stream@3.0.0",
+		"it-map": "https://esm.sh/it-map@3.1.6",
+		"it-pipe": "https://esm.sh/it-pipe@3.0.1",
+		"libp2p": "https://esm.sh/libp2p@3.3.4",
+		"multiformats/hashes/sha2": "https://esm.sh/multiformats/hashes/sha2",
+		"protons-runtime": "https://esm.sh/protons-runtime@7.0.0",
+		"signalingserver.js": "https://esm.sh/signalingserver.js@0.0.6",
+		"uint8arrays/alloc": "https://esm.sh/uint8arrays/alloc",
+		"webpeerjs": "./../src/webpeer.js"
+    }
+  }
+</script>	
   </head>
   <body>
     <div id="root"></div>
@@ -24,6 +59,135 @@
 	  <ul id="log"></ul>
 
     </div>
-    <script type="module" src="main.js"></script>
+	
+<script type="module">
+import {webpeerjs} from 'webpeerjs'
+
+const statusValueEl = document.getElementById('statusValue')
+const nodeIdEl = document.getElementById('nodeId')
+const discoveredPeerCountEl = document.getElementById('discoveredPeerCount')
+const connectedPeerCountEl = document.getElementById('connectedPeerCount')
+const connectedPeersListEl = document.getElementById('connectedPeersList')
+const multiaddressEl = document.getElementById('multiaddress')
+const listenAddressCountEl = document.getElementById('listenAddressCount')
+const connectedWebPeerCountEl = document.getElementById('connectedWebPeerCount')
+const connectedWebPeersListEl = document.getElementById('connectedWebPeersList')
+const logEl = document.getElementById('log')
+const logCountEl = document.getElementById('logCount')
+
+void async function main() {
+
+	const node = await webpeerjs.createWebpeer()
+	
+	window.node = node
+
+	setInterval(() => {
+		//statusValueEl.innerHTML = node.status === 'started' ? 'Online' : 'Offline'
+		statusValueEl.innerHTML = node.status
+		updateConnectedPeers()
+		updateDiscoveredPeers()
+		updateListenAddress()
+		updatePeers()
+	}, 500)
+
+	nodeIdEl.innerHTML = node.id
+	
+	function testplugin(callback){
+		console.log('testplugin',callback.id)
+	}
+	node.plugin(testplugin)
+
+	const updateDiscoveredPeers = () => {
+	  discoveredPeerCountEl.innerHTML = node.IPFS.discoveredPeers.size
+	}
+
+	const updateConnectedPeers = () => {
+	  const peers = node.IPFS.libp2p.getPeers()
+	  connectedPeerCountEl.innerHTML = peers.length
+	  connectedPeersListEl.innerHTML = ''
+	  for (const peer of peers) {
+		const peerEl = document.createElement('li')
+		peerEl.innerText = peer.toString()
+		connectedPeersListEl.appendChild(peerEl)
+	  }
+	}
+	
+	const updateListenAddress = () => {
+		const address = node.address
+		listenAddressCountEl.innerHTML = address.length
+		multiaddressEl.innerHTML = ''
+		for(const addr of address){
+			const addrEl = document.createElement('li')
+			addrEl.innerText = addr
+			multiaddressEl.appendChild(addrEl)
+		}
+	}
+	
+	const updatePeers = ()=> {
+		  const peers = node.peers
+		  connectedWebPeerCountEl.innerHTML = peers.length
+		  connectedWebPeersListEl.innerHTML = ''
+		  for (const peer of peers) {
+			const peerEl = document.createElement('li')
+			peerEl.innerText = peer.id
+			connectedWebPeersListEl.appendChild(peerEl)
+		  }
+	}
+	
+	let count = 0
+
+	var getParams = function (url) {
+		var params = {};
+		var parser = document.createElement('a');
+		parser.href = url;
+		var query = parser.search.substring(1);
+		var vars = query.split('&');
+		for (var i = 0; i < vars.length; i++) {
+		  var pair = vars[i].split('=');
+		  params[pair[0]] = decodeURIComponent(pair[1]);
+		}
+		return params;
+	};
+	var params = getParams(window.location.href);
+	
+	let room = 'myroom'
+	
+	if (params.room != undefined){
+		room = params.room
+	}
+
+	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom(room)
+	listenMessage((msg,id)=>{
+		//console.log(msg,id)
+		const log = document.createElement('li')
+		log.innerText = id+' : '+msg
+		logEl.appendChild(log)
+		
+		count++
+		logCountEl.innerHTML = count
+	})
+	
+	onMembersChange((members)=>{
+		console.log('members',members)
+	})
+	
+	let number = 0
+	
+	setInterval(()=>{
+		sendMessage(number)
+		number++
+	},2000)
+	
+	node.onConnect((id)=>{
+		console.log(`Connected to ${id}`)
+	})
+	
+	node.onDisconnect((id)=>{
+		console.log(`Disconnected from ${id}`);
+	})
+	
+}()
+</script>
+
   </body>
 </html>
