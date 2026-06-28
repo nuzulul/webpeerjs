@@ -1,9 +1,8 @@
 # WebPEER
-> WebPEER is a P2P Network that Runs in a Browser
 
-This [webpeerjs](https://github.com/nuzulul/webpeerjs) library implements libp2p to create decentralized peer-to-peer network that runs in a browser without a central server.
+WebPEER is a P2P Network that Runs in a Standard Browser.
 
-Basic Chat App Demo available at : [https://nuzulul.github.io/webpeerjs/demo/chat.html](https://nuzulul.github.io/webpeerjs/demo/chat.html)
+[>DEMO<](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
 ![WebPEER](webpeer.png)
 
@@ -16,11 +15,10 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 
 ## Features
 
-* ✅ Decentralized P2P
+* ✅ Distributed P2P
 * ✅ Scalable Peers
 * ✅ Works in Browsers
 * ✅ Broadcast Messages
-* ✅ Censorship Resistant
 
 ## Ideas
 
@@ -46,82 +44,93 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 ## Browser Support
 ![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) | ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) | ![Brave](https://raw.github.com/alrra/browser-logos/master/src/brave/brave_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png) |
 --- | --- | --- | --- | --- | --- |
-Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ❓ |
+Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ |
 
 ## Quickstart
-
-Try now in [Playground](https://jsbin.com/suwesaliro/1/edit?html,output) :
-```
-https://jsbin.com/suwesaliro/1/edit?html,output
-```
 
 NPM install:
 
 ```
-npm i webpeerjs
+npm install webpeerjs
 ```
 
-Browser `<script>` tag :
+CDN :
 
-Uses built-in JS files from [latest release](https://github.com/nuzulul/webpeerjs/releases/latest) or [CDN](https://www.jsdelivr.com/package/npm/webpeerjs) will make it's exports available as `webpeerjs` in the global namespace.
+* [https://esm.sh/webpeerjs](https://esm.sh/webpeerjs)
 
 ```
-<script src="https://cdn.jsdelivr.net/npm/webpeerjs@0.1/dist/umd/webpeerjs.min.js"></script>
+<script type="importmap">
+{
+	"imports": {
+		"webpeerjs" : "https://esm.sh/webpeerjs"
+	}
+}
+</script>
 ```
 
 ## Example
 
 ```
-import { webpeerjs } from 'webpeerjs'
+import { createWebPEER } from 'webpeerjs'
 
-void async function main() {
+const config = {
+	networkName : 'myNetwork'
+}
 
-	const node = await webpeerjs.createWebpeer()
+const peer = await createWebPEER();
+
+console.log(`My peer id : ${peer.id}`)
+
+const room = peer.joinRoom('lobbyroom')
+
+room.onMessage((message,id) => {
+	console.log(`Message from ${id} : ${message}`)
+})
+
+room.onMembersChange((data) => {
+	console.log(`Members : ${data}`)
+	room.sendMessage('hello')
+})
 	
-	console.log(`My node id : ${node.id}`)
-	
-	const [broadcast,listen,onmembersupdate] = node.joinRoom('globalroom')
-	
-	listen((message,id) => {
-		console.log(`Message from ${id} : ${message}`)
-	})
-	
-	onmembersupdate((data) => {
-		console.log(`Members : ${data}`)
-		broadcast('hello')
-	})
-	
-}()
 ```
 
 ## API
 
-- `createWebpeer(config)` - Create a new node.
-	- `config` - Configuration object contain:
-		- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport, currently the only transport available for direct peer-to-peer connectivity between browser.
-- `id` - Get the unique ID of the node as an identity in the global network.
-- `status` - Get the node status, returns `connected` or `unconnected`.
-- `peers` - Get all connected peers.
-- `joinRoom(namespace)` - Join to the room, returns an array of three functions, example : [Broadcaster, onListenBroadcast, onMembersUpdate].
-	- `Broadcaster` - Function to broadcast message to room members.
-		- Limited to 1 message/second.
-	- `onListenBroadcast` - Callback function that listen on incoming broadcast message.
-	- `onMembersUpdate` - Callback function that listen on room members update.
+### `peer = await createWebPEER(config)`
 
-## API Docs
+Create a new peer node.
 
-[https://nuzulul.github.io/webpeerjs](https://nuzulul.github.io/webpeerjs)
+`config` - Configuration object contains:
+
+- `networkName` - Unique identifier of your network.
+
+- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport.
+		
+### `peer.id`
+
+Get the unique ID of the node as an identity in the global network.
+
+### `peer.status`
+
+Get the node status, returns `connected` or `unconnected`.
+
+### `peer.peers`
+
+Get all connected peers.
+
+### `room = peer.joinRoom(namespace)`
+
+Join to the room, returns an object.
+
+- `room.sendMessage()` - Function to broadcast message to room members.
+- `romm.onMessage((message,id)=>{})` - Listen on incoming broadcast message.
+- `room.onMembersChange((members)=>{})` - Listen on room members update.
 
 ## Related
 
-- [webConnect.js](https://github.com/nuzulul/webConnect.js) - Auto WebRTC Mesh P2P network without any hassle.
-- [RingsNetwork](https://github.com/RingsNetwork/rings) - Rings is a structured peer-to-peer network implementation using WebRTC, Chord DHT, and full WebAssembly (WASM) support.
+- [p2p.js](https://github.com/nuzulul/p2p.js) - Alternative simple api WebRTC library with auto matchmaking without signaling server.
 
 ## License
 
-MIT
-
-## Maintainers
-
-[Nuzulul Zulkarnain](https://github.com/nuzulul)
+[MIT (c) 2024](https://github.com/nuzulul/webpeerjs/blob/main/LICENSE) [Nuzulul Zulkarnain](https://github.com/nuzulul)
 

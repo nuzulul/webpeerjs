@@ -7,12 +7,12 @@
 <script type="importmap">
   {
     "imports": {
-		"@chainsafe/libp2p-gossipsub": "https://esm.sh/@chainsafe/libp2p-gossipsub@14.1.2",
 		"@chainsafe/libp2p-noise": "https://esm.sh/@chainsafe/libp2p-noise@17.0.0",
 		"@chainsafe/libp2p-yamux": "https://esm.sh/@chainsafe/libp2p-yamux@8.0.1",
 		"@helia/delegated-routing-v1-http-api-client": "https://esm.sh/@helia/delegated-routing-v1-http-api-client@8.0.1",
 		"@libp2p/circuit-relay-v2": "https://esm.sh/@libp2p/circuit-relay-v2@4.2.7",
 		"@libp2p/dcutr": "https://esm.sh/@libp2p/dcutr@3.0.22",
+		"@libp2p/gossipsub": "https://esm.sh/@libp2p/gossipsub@16.0.3",
 		"@libp2p/identify": "https://esm.sh/@libp2p/identify@4.1.8",
 		"@libp2p/kad-dht": "https://esm.sh/@libp2p/kad-dht@16.3.3",
 		"@libp2p/logger": "https://esm.sh/@libp2p/logger@6.2.9",
@@ -61,7 +61,7 @@
     </div>
 	
 <script type="module">
-import {webpeerjs} from 'webpeerjs'
+import {createWebPEER} from 'webpeerjs'
 
 const statusValueEl = document.getElementById('statusValue')
 const nodeIdEl = document.getElementById('nodeId')
@@ -75,9 +75,13 @@ const connectedWebPeersListEl = document.getElementById('connectedWebPeersList')
 const logEl = document.getElementById('log')
 const logCountEl = document.getElementById('logCount')
 
-void async function main() {
 
-	const node = await webpeerjs.createWebpeer()
+
+	const configuration = {
+		networkName: 'testWebPEER'
+	}
+
+	const node = await createWebPEER(configuration)
 	
 	window.node = node
 
@@ -150,14 +154,15 @@ void async function main() {
 	};
 	var params = getParams(window.location.href);
 	
-	let room = 'myroom'
+	let roomname = 'myroom'
 	
 	if (params.room != undefined){
-		room = params.room
+		roomname = params.room
 	}
 
-	const [sendMessage,listenMessage,onMembersChange] = node.joinRoom(room)
-	listenMessage((msg,id)=>{
+	const room  = node.joinRoom(roomname)
+	
+	room.onMessage((msg,id)=>{
 		//console.log(msg,id)
 		const log = document.createElement('li')
 		log.innerText = id+' : '+msg
@@ -167,14 +172,14 @@ void async function main() {
 		logCountEl.innerHTML = count
 	})
 	
-	onMembersChange((members)=>{
+	room.onMembersChange((members)=>{
 		console.log('members',members)
 	})
 	
 	let number = 0
 	
 	setInterval(()=>{
-		sendMessage(number)
+		room.sendMessage(number)
 		number++
 	},2000)
 	
@@ -186,7 +191,7 @@ void async function main() {
 		console.log(`Disconnected from ${id}`);
 	})
 	
-}()
+
 </script>
 
   </body>

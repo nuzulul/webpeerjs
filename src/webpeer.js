@@ -26,9 +26,9 @@ import { webRTC } from '@libp2p/webrtc'
 import { dcutr } from '@libp2p/dcutr'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-//import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { gossipsub } from '@chainsafe/libp2p-gossipsub'
+import { gossipsub } from '@libp2p/gossipsub'
 import { identify, identifyPush } from '@libp2p/identify'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
@@ -37,7 +37,9 @@ import { ping } from '@libp2p/ping';
 import { defaultLogger } from '@libp2p/logger';
 import {createSignalingServer} from 'signalingserver.js';
 
-
+/**************************************************************************
+ * Main class
+ **************************************************************************/
 class webpeerjs{
 	
 	//libp2p instance
@@ -120,7 +122,7 @@ class webpeerjs{
 	address
 	peers
 	
-	constructor(libp2p,dbstore,onMetrics,onWebsocketFn,onDialFn){
+	constructor(signalingserver,libp2p,dbstore,onMetrics,onWebsocketFn,onDialFn){
 		
 		this.#libp2p = libp2p
 		this.#dbstore = dbstore
@@ -173,13 +175,37 @@ class webpeerjs{
 
 		for(const topic of config.CONFIG_PUBSUB_PEER_DISCOVERY_HYBRID){
 			this.#libp2p.services.pubsub.subscribe(topic)
-		}		
-		
-		if(config.CONFIG_DEBUG_ENABLED){
-			localStorage.setItem('debug', 'libp2p:*');
 		}
+
+
+		/**************************************************************************
+		 * Signaling server
+		 **************************************************************************/
+		signalingserver.data((signal,signal_id)=>{
+			if(!this.#connections.has(signal.id)){
+				let mddrs = []
+				for(const addr of signal.address){
+					if(!addr.includes('webrtc'))continue
+					const mddr = multiaddr(addr)
+					mddrs.push(mddr)
+				}
+				this.#dialMultiaddress(mddrs)
+			}
+		})		
+
+		setInterval(()=>{
+			const broadcast = {
+				id : this.id,
+				address : this.address
+			}			
+			signalingserver.send(broadcast);
+		},10*1500)		
 		
-		//listen to peer connect event
+		
+		
+		/**************************************************************************
+		 * Listen on incoming connection
+		 **************************************************************************/
 		this.#libp2p.addEventListener("peer:connect",async (evt) => {
 			
 			//const connection = evt.detail;
@@ -247,7 +273,10 @@ class webpeerjs{
 		});
 
 
-		//listen message from subscribed pupsub topic
+
+		/**************************************************************************
+		 * Listen message from subscribed pupsub topic
+		 **************************************************************************/		
 		this.#libp2p.services.pubsub.addEventListener('message', event => {
 			
 			//console.log('on:'+event.detail.topic,event.detail.data)
@@ -417,13 +446,14 @@ class webpeerjs{
 
 									//inbound message
 									//use #msgIdtracker to prevent double message
-									//use #msgTimeTracker to limit inbound message 1msg/s
+									//use #msgTimeTracker to limit inbound message count /s
 									if(message){
 										const msgID = msgId+id
 										let oldmsgtime = 0
 										let newmsgtime = new Date().getTime()
 										if(this.#msgTimeTracker.has(id))oldmsgtime = this.#msgTimeTracker.get(id)
-										const msgtimelimit = 1000
+										//const msgtimelimit = 1000
+										const msgtimelimit = -1
 										if(!this.#msgIdtracker.has(msgID) && newmsgtime-oldmsgtime>msgtimelimit){
 											this.#msgIdtracker.set(msgID,newmsgtime)
 											this.#msgTimeTracker.set(id,newmsgtime)
@@ -491,7 +521,10 @@ class webpeerjs{
 		})
 		
 		
-		//listen to peer discovery event
+
+		/**************************************************************************
+		 * Listen to peer discovery event
+		 **************************************************************************/		
 		this.#libp2p.addEventListener('peer:discovery', (evt) => {
 
 			//console.log('Discovered:', evt.detail.id.toString())
@@ -542,7 +575,10 @@ class webpeerjs{
 		})
 
 		
-		//listen to peer disconnect event
+		
+		/**************************************************************************
+		 * Listen to peer disconnect event
+		 **************************************************************************/		
 		this.#libp2p.addEventListener("peer:disconnect",async (evt) => {
 			
 			//const connection = evt.detail;
@@ -617,10 +653,13 @@ class webpeerjs{
 		});
 		
 		
-		//listen to self peer update
+
+		/**************************************************************************
+		 * Listen to listen address change
+		 **************************************************************************/		
 		this.#libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
 			
-			console.log('peer',peer)
+			//console.log('peer',peer)
 			//const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 			//console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
 			
@@ -639,6 +678,10 @@ class webpeerjs{
 			this.#peerDiscoveryHybrid()
 		})
 		
+		
+		/**************************************************************************
+		 * Listen on identity service
+		 **************************************************************************/		
 		this.#libp2p.addEventListener('peer:identify', async (evt) => {
 			//console.log('peer:identify '+evt.detail.peerId.toString(),evt.detail)
 			
@@ -682,9 +725,8 @@ class webpeerjs{
 					//reset this last seen
 					const now = new Date().getTime()
 					const metadata = {addrs:address,last:now}
-					this.#connectedPeers.set(id,metadata)
+					this.#connectedPeers.set(id,metadata);
 				}
-				
 				
 				const command = 'peer-exchange'
 				this.#dialProtocol(id,command)
@@ -767,8 +809,10 @@ class webpeerjs{
 		},30e3)*/
 		
 	}
-
-
+	
+	//this.#getAddress = (function(address) {
+		///return this.address
+	//})(this.address);	
 
 
 	/*
@@ -816,16 +860,16 @@ class webpeerjs{
 				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 				sendMessage : async (message) => {
 					const now = (new Date()).getTime()
-					if(now-this.#sendMessageTimeTracker < 1000){
-						throw mkErr('can not send more than 1 message/s')
-					}
+					//if(now-this.#sendMessageTimeTracker < 1000){
+						//throw mkErr('can not send more than 1 message/s')
+					//}
 					this.#sendMessageTimeTracker = now
-					const msgId = (new Date()).getTime()
+					const msgId = crypto.randomUUID();
 					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
 					const arr = uint8ArrayFromString(data)
 					const sizelimit = config.CONFIG_MESSAGE_SIZE_LIMIT
 					if(arr.byteLength > sizelimit){
-						throw mkErr('message too large')
+						throw mkErr(`Message too large more than ${sizelimit} byte`);
 					}
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
@@ -842,11 +886,11 @@ class webpeerjs{
 			}
 		}
 		
-		return [
-			this.#rooms[room].sendMessage,
-			this.#rooms[room].listenMessage,
-			this.#rooms[room].onMembersChange
-		]
+		return {
+			sendMessage : this.#rooms[room].sendMessage,
+			onMessage : this.#rooms[room].listenMessage,
+			onMembersChange : this.#rooms[room].onMembersChange
+		}
 	}
 	
 	dial(addr){
@@ -940,10 +984,18 @@ class webpeerjs{
 		}
 		this.#ping()
 	}
-	
+
+
+
+	/**************************************************************************
+	 * Handle custom protocol
+	 **************************************************************************/	
 	async #registerProtocol(){
 		
 		const handler = async ({ connection, stream }) => {
+			
+			//console.log('onprotocol',connection);
+			
 			try{
 				const output = await pipe(
 					stream.source,
@@ -1031,7 +1083,7 @@ class webpeerjs{
 		await this.#libp2p.handle(config.CONFIG_PROTOCOL, handler, {
 		  maxInboundStreams: 100,
 		  maxOutboundStreams: 100,
-		  runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION
+		  runOnLimitedConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION
 		})
 
 		await this.#libp2p.register(config.CONFIG_PROTOCOL, {
@@ -1046,7 +1098,11 @@ class webpeerjs{
 		})
 
 	}
-	
+
+
+	/**************************************************************************
+	 * Dial custom protocol
+	 **************************************************************************/		
 	async #dialProtocol(id,command){
 
 		const connections = this.#libp2p.getConnections().map((con)=>{return {id:con.remotePeer.toString(),addr:con.remoteAddr.toString()}})
@@ -1078,7 +1134,7 @@ class webpeerjs{
 
 		try{
 			
-			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION})
+			const stream = await this.#libp2p.dialProtocol(mddr, config.CONFIG_PROTOCOL,{runOnLimitedConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION})
 			
 			const output = await pipe(
 				message,
@@ -1884,294 +1940,185 @@ class webpeerjs{
 				}
 			  }
 	}
-	
-	
-	//entry point to webpeerjs
-	static async createWebpeer(){
 
-		// all libp2p debug logs
-		//localStorage.setItem('debug', 'libp2p:*')
-		
-		const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
-		await dbstore.open()
-		
-		const bootstrapAddrs = []
-		
-		//let addrs = []
-		const getbootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
-		for(const peer of getbootstrap){
-			const addrs = peer.Peers[0].Addrs
-			const id = peer.Peers[0].ID
-			//let mddrs = []
-			for(const addr of addrs){
-				if(addr.includes('webtransport')&&addr.includes('certhash')){
-					bootstrapAddrs.push(addr+'/p2p/'+id)
-				}
-			}
-		}
+}
 
-		let onMetricsFn = () => {}
-		const onMetrics = f => (onMetricsFn = f)
 
-		let isWebsocket = false
-		let onWebsocketFn = () => {}
-		const onWebsocket = f => (onWebsocketFn = f)
-		onWebsocket((data)=>{
-			isWebsocket = data
-		})
-		
-		let isDial = true
-		let onDialFn = () => {}
-		const onDial = f => (onDialFn = f)
-		onDial((data)=>{
-			//if(isDial!=data)console.warn('isDial',data)
-			isDial = data
-		})
-		
-		let listenaddress = ['/p2p-circuit']
-		
-		if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == false){
-			listenaddress.push('/webrtc')
-		}
-		
-		const stunurls = config.CONFIG_WEBRTC_STUN_URLS
-		const stunurlsbackup = config.CONFIG_WEBRTC_STUN_URLS_BACKUP
-		
-		const turnurls = atob(config.CONFIG_WEBRTC_TURN_HOST)
-		const turnusername = atob(config.CONFIG_WEBRTC_TURN_USER)
-		const turncredential = atob(config.CONFIG_WEBRTC_TURN_PWD)
+/**************************************************************************
+ * Entry point to create a new peer
+ **************************************************************************/
+const createWebPEER = async (configuration) => {
 
-		const turnurlsbackup = atob(config.CONFIG_WEBRTC_TURN_HOST_BACKUP)
-		const turnusernamebackup = atob(config.CONFIG_WEBRTC_TURN_USER_BACKUP)
-		const turncredentialbackup = atob(config.CONFIG_WEBRTC_TURN_PWD_BACKUP)
-		
-		async function checkice(stunurls,turnurls,turnusername,turncredential,time){
-			return new Promise((resolve)=>{
-				
-				let stun = false
-				let turn = false
-				
-				const timeout = setTimeout(()=>{
-					let ice = []
-					ice.push(stun)
-					ice.push(turn)
-					resolve(ice)
-				},time)
-				
-				function check(){
-					if(stun && turn){
-						let ice = []
-						ice.push(stun)
-						ice.push(turn)
-						clearTimeout(timeout)
-						resolve(ice)
-					}
-				}
-				
-				//test ice servers
-				
-				const iceServers = [
-					{
-						urls: stunurls
-					},
-					{
-						urls: turnurls, 
-						username: turnusername, 
-						credential: turncredential
-					}
-				];
-
-				const pc = new RTCPeerConnection({
-					iceServers
-				});
-
-				pc.onicecandidate = (e) => {
-					if (!e.candidate) return;
-
-					//console.log(e.candidate.candidate);
-
-					// stun works
-					if(e.candidate.type == "srflx"){
-						//console.log('publicip',e.candidate.address);
-						stun = 	{
-									urls: stunurls
-								}
-						check()
-					}
-
-					// turn works
-					if(e.candidate.type == "relay"){
-						turn =  {
-									urls: turnurls, 
-									username: turnusername, 
-									credential: turncredential
-								}
-						check()
-					}
-				};
-
-				pc.onicecandidateerror = (e) => {
-					console.debug(e);
-				};
-
-				pc.createDataChannel('webpeerjs');
-				pc.createOffer().then(offer => pc.setLocalDescription(offer));
-			})
-		}
-		
-		let ice = []
-		
-		let configuration = {}
-		
-		if(arguments.length > 0){
-			configuration = arguments[0]
-		}
-		
-		//set rtc configuration
-		if(configuration.rtcConfiguration === undefined){
-			
-			ice = await checkice(stunurls,turnurls,turnusername,turncredential,5000)
-
-			//console.log(ice)
-			
-			//recheck ice
-			if(!ice[0] && !ice[1]){
-				ice = await checkice(stunurlsbackup,turnurlsbackup,turnusernamebackup,turncredentialbackup,5000)
-			}else if (ice[0] && !ice[1]){
-				ice = await checkice(stunurls,turnurlsbackup,turnusernamebackup,turncredentialbackup,5000)
-			}else if (!ice[0] && ice[1]){
-				ice = await checkice(stunurlsbackup,turnurls,turnusername,turncredential,5000)
-			}
-			
-			//console.log(ice)
-			
-			//final ice remove false value
-			ice.forEach(function(value, index) {
-			  if(!value){
-				  this.splice(index, 1)
-			  }
-			}, ice);
-			
-			//console.log(ice)
-			
-			configuration.rtcConfiguration = {
-				iceServers: ice,
-			}
-		}
-		
-		
-		//create libp2p instance
-		const libp2p = await createLibp2p({
-			addresses: {
-				listen: listenaddress,
-			},
-			transports:[
-				webTransport(),
-				webSockets(),
-				webRTC({
-					rtcConfiguration: configuration.rtcConfiguration,
-				}),
-				circuitRelayTransport({
-					discoverRelays: config.CONFIG_DISCOVER_RELAYS,
-					reservationConcurrency: 1,
-					maxReservationQueueLength: 3
-				}),
-			],
-			connectionManager: {
-				maxConnections: config.CONFIG_MAX_CONNECTIONS,
-				minConnections: config.CONFIG_MIN_CONNECTIONS,
-				autoDialInterval:60e3,
-				autoDialConcurrency:0,
-				autoDialMaxQueueLength:0,
-				autoDialPriority:1000,
-				autoDialDiscoveredPeersDebounce:60e3,
-				maxParallelDials: 3,
-				dialTimeout: 5e3,
-				maxIncomingPendingConnections: 5,
-				maxDialQueueLength:10,
-				inboundConnectionThreshold:3,
-				maxPeerAddrsToDial:2,
-				inboundUpgradeTimeout:5e3
-			},
-			connectionEncrypters: [noise()],
-			streamMuxers: [
-				yamux({
-					maxInboundStreams: 100,
-					maxOutboundStreams: 100,
-				})
-			],
-			connectionGater: {
-				filterMultiaddrForPeer: async (peer, multiaddrTest) => {
-					const multiaddrString = multiaddrTest.toString()
-					if (
-						multiaddrString.includes("/ip4/127.0.0.1") ||
-						multiaddrString.includes("/ip6/")
-					) {
-						return false
-					}
-					if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return isWebsocket
-					return isDial
-				},
-				denyDialMultiaddr: async (multiaddrTest) => {
-					const multiaddrString = multiaddrTest.toString()
-					if (
-						multiaddrString.includes("/ip4/127.0.0.1") ||
-						multiaddrString.includes("/ip6/")
-					) {
-						return true
-					}
-					if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return !isWebsocket
-					return !isDial
-				},
-			},
-			peerDiscovery: [
-				/*pubsubPeerDiscovery({
-					interval: 5_000,
-					topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
-					listenOnly: false,
-				}),*/
-				
-			],
-			services: {
-				pubsub: gossipsub({
-					allowPublishToZeroTopicPeers: true,
-					msgIdFn: msgIdFnStrictNoSign,
-					ignoreDuplicatePublishError: true,
-					runOnTransientConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION,
-				}),
-				identify: identify(),
-				ping: ping(),
-				identifyPush: identifyPush(),
-				aminoDHT: kadDHT({
-					protocol: '/ipfs/kad/1.0.0',
-					peerInfoMapper: removePrivateAddressesMapper,
-					clientMode: false
-				}),
-				dcutr: dcutr()
-			},
-			peerStore: {
-				persistence: true,
-				threshold: 1
-			},
-			metrics: simpleMetrics({
-				onMetrics: (metrics) => {onMetricsFn(metrics)},
-				intervalMs: 1000
-			})
-		})
-		
-		
-		
-		//console.log(`Node started with id ${libp2p.peerId.toString()}`)
-
-		//DHT server mode act as bootstrap peer in IPFS network
-		await libp2p.services.aminoDHT.setMode("server")
-		
-		
-		//return webpeerjs class
-		return new webpeerjs(libp2p,dbstore,onMetrics,onWebsocketFn,onDialFn)
+	// all libp2p debug logs
+	if(config.CONFIG_DEBUG_ENABLED){
+		localStorage.setItem('debug', 'libp2p:*');
 	}
+	
+	let signalconfig = {};
+	if(configuration && configuration.networkName){
+		signalconfig['appid'] = configuration.networkName;
+	}else{
+		signalconfig['appid'] = config.CONFIG_PREFIX;
+	}
+	
+	const signalingserver = createSignalingServer(signalconfig);
+	
+	const dbstore = new IDBDatastore(config.CONFIG_DBSTORE_PATH)
+	await dbstore.open()
+	
+	const bootstrapAddrs = []
+	
+	//let addrs = []
+	const getbootstrap = config.CONFIG_KNOWN_BOOTSTRAP_PEERS_ADDRS
+	for(const peer of getbootstrap){
+		const addrs = peer.Peers[0].Addrs
+		const id = peer.Peers[0].ID
+		//let mddrs = []
+		for(const addr of addrs){
+			if(addr.includes('webtransport')&&addr.includes('certhash')){
+				bootstrapAddrs.push(addr+'/p2p/'+id)
+			}
+		}
+	}
+
+	let onMetricsFn = () => {}
+	const onMetrics = f => (onMetricsFn = f)
+
+	let isWebsocket = false
+	let onWebsocketFn = () => {}
+	const onWebsocket = f => (onWebsocketFn = f)
+	onWebsocket((data)=>{
+		isWebsocket = data
+	})
+	
+	let isDial = true
+	let onDialFn = () => {}
+	const onDial = f => (onDialFn = f)
+	onDial((data)=>{
+		//if(isDial!=data)console.warn('isDial',data)
+		isDial = data
+	})
+	
+	let listenaddress = ['/p2p-circuit']
+	
+	if(config.CONFIG_RUN_ON_TRANSIENT_CONNECTION == false){
+		listenaddress.push('/webrtc')
+	}
+	
+	let webrtcconfig = {}
+			
+	if(configuration && configuration.rtcConfiguration){
+		webrtcconfig[rtcConfiguration] = configuration.rtcConfiguration
+	}
+	
+	
+	//create libp2p instance
+	const libp2p = await createLibp2p({
+		addresses: {
+			listen: listenaddress,
+		},
+		transports:[
+			webTransport(),
+			webSockets(),
+			webRTC(webrtcconfig),
+			circuitRelayTransport({
+				discoverRelays: config.CONFIG_DISCOVER_RELAYS,
+				reservationConcurrency: 1,
+				maxReservationQueueLength: 3
+			}),
+		],
+		connectionManager: {
+			maxConnections: config.CONFIG_MAX_CONNECTIONS,
+			minConnections: config.CONFIG_MIN_CONNECTIONS,
+			autoDialInterval:60e3,
+			autoDialConcurrency:0,
+			autoDialMaxQueueLength:0,
+			autoDialPriority:1000,
+			autoDialDiscoveredPeersDebounce:60e3,
+			maxParallelDials: 3,
+			dialTimeout: 5e3,
+			maxIncomingPendingConnections: 5,
+			maxDialQueueLength:10,
+			inboundConnectionThreshold:3,
+			maxPeerAddrsToDial:2,
+			inboundUpgradeTimeout:5e3
+		},
+		connectionEncrypters: [noise()],
+		streamMuxers: [
+			yamux({
+				maxInboundStreams: 100,
+				maxOutboundStreams: 100,
+			})
+		],
+		connectionGater: {
+			filterMultiaddrForPeer: async (peer, multiaddrTest) => {
+				const multiaddrString = multiaddrTest.toString()
+				if (
+					multiaddrString.includes("/ip4/127.0.0.1") ||
+					multiaddrString.includes("/ip6/")
+				) {
+					return false
+				}
+				if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return isWebsocket
+				return isDial
+			},
+			denyDialMultiaddr: async (multiaddrTest) => {
+				const multiaddrString = multiaddrTest.toString()
+				if (
+					multiaddrString.includes("/ip4/127.0.0.1") ||
+					multiaddrString.includes("/ip6/")
+				) {
+					return true
+				}
+				if(multiaddrString.includes("/ws/") || multiaddrString.includes("/wss/"))return !isWebsocket
+				return !isDial
+			},
+		},
+		peerDiscovery: [
+			pubsubPeerDiscovery({
+				interval: 5_000,
+				topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
+				listenOnly: false,
+			}),
+			
+		],
+		services: {
+			pubsub: gossipsub({
+				allowPublishToZeroTopicPeers: true,
+				msgIdFn: msgIdFnStrictNoSign,
+				ignoreDuplicatePublishError: true,
+				runOnLimitedConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION,
+			}),
+			identify: identify(),
+			ping: ping(),
+			identifyPush: identifyPush(),
+			aminoDHT: kadDHT({
+				protocol: '/ipfs/kad/1.0.0',
+				peerInfoMapper: removePrivateAddressesMapper,
+				clientMode: false
+			}),
+			dcutr: dcutr()
+		},
+		peerStore: {
+			persistence: true,
+			threshold: 1
+		},
+		metrics: simpleMetrics({
+			onMetrics: (metrics) => {onMetricsFn(metrics)},
+			intervalMs: 1000
+		})
+	})
+	
+	//console.log(`Node started with id ${libp2p.peerId.toString()}`)
+
+	//DHT server mode act as bootstrap peer in IPFS network
+	await libp2p.services.aminoDHT.setMode("server")
+	
+	
+	//return webpeerjs class
+	return new webpeerjs(signalingserver,libp2p,dbstore,onMetrics,onWebsocketFn,onDialFn)
 }
 
 
 //export module
-export {webpeerjs}
+export {createWebPEER}

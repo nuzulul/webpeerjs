@@ -1,6 +1,6 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
 
-const prefix = 'webpeerjs'
+const prefix = 'webpeer.js'
 export const CONFIG_PREFIX = prefix
 export const CONFIG_PROTOCOL = '/'+prefix+'/1.0.0'
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
@@ -22,17 +22,6 @@ export const CONFIG_KNOWN_BOOTSTRAP_DNS = '_dnsaddr.bootstrap.libp2p.io'
 export const CONFIG_JOIN_ROOM_VERSION = 1
 export const CONFIG_TIMEOUT_DIAL_KNOWN_PEERS = 15000
 export const CONFIG_RUN_ON_TRANSIENT_CONNECTION = false
-export const CONFIG_WEBRTC_STUN_URLS = 'stun:stun.l.google.com:19302'
-export const CONFIG_WEBRTC_STUN_URLS_BACKUP = 'stun:global.stun.twilio.com:3478'
-export const CONFIG_WEBRTC_TURN_HOST = 'dHVybjp0dXJuMDEuYnJpZS5maTo1MzQ5'
-export const CONFIG_WEBRTC_TURN_USER = 'YnJpZQ=='
-export const CONFIG_WEBRTC_TURN_PWD = 'Zmk='
-export const CONFIG_WEBRTC_TURN_HOST_BACKUP = 'dHVybjpyZWxheTEuZXhwcmVzc3R1cm4uY29tOjM0Nzg='
-export const CONFIG_WEBRTC_TURN_USER_BACKUP = 'ZWZJSllZNjdDNElRMzFZQUlP'
-export const CONFIG_WEBRTC_TURN_PWD_BACKUP = 'Vk01SmdhODlkYjJaWU9aSA=='
-export const CONFIG_WEBRTC_TURN_HOST_BACKUP1 = 'dHVybjpzdGFuZGFyZC5yZWxheS5tZXRlcmVkLmNhOjgw'
-export const CONFIG_WEBRTC_TURN_USER_BACKUP1 = 'ZmZlNmIxOThjOGMxYjM5ODg1OWFiOGY4'
-export const CONFIG_WEBRTC_TURN_PWD_BACKUP1 = 'aWpkQjVTcTIwREVsZzdDRg=='
 export const CONFIG_MESSAGE_SIZE_LIMIT = 100*1024 // 100KB
 export const CONFIG_DEBUG_ENABLED = true
 export const CONFIG_AUTODIAL_MAX_ERROR_LIMIT = 45
