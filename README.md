@@ -1,4 +1,4 @@
-# WebPEER
+# WebPEER.js
 
 WebPEER is a P2P Network that Runs in a Standard Browser.
 
@@ -26,25 +26,23 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * Voting / Polling
 * Collaborative activity
 * IoT
-* Censorship resistent social media
+* social media
 * Remote control
 * Multiplayer games
-* Decentralized/distributed web
+* Distributed web
 * Signalling protocol
 * Location tracker
-* User activity tracker.
+* Activity tracker.
 
 ## Try it out!
 
-* Go to a deployed chat demo at : [https://nuzulul.github.io/webpeerjs/demo/chat.html](https://nuzulul.github.io/webpeerjs/demo/chat.html) .
+* Go to a deployed chat demo at : [p2pchat](https://nuzulul.github.io/webpeerjs/demo/chat.html) .
 * Open the app on another device.
 * Both your devices should connected.
 * Now start sending message.
 
 ## Browser Support
-![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) | ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) | ![Brave](https://raw.github.com/alrra/browser-logos/master/src/brave/brave_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png) |
---- | --- | --- | --- | --- | --- |
-Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ | Latest ✔ |
+![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) ![Brave](https://raw.github.com/alrra/browser-logos/master/src/brave/brave_48x48.png) ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png)
 
 ## Quickstart
 
@@ -102,31 +100,27 @@ Create a new peer node.
 
 `config` - Configuration object contains:
 
-- `networkName` - Unique identifier of your network.
+- `networkName` - Unique identifier name of your network.
 
 - `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport.
 		
 ### `peer.id`
 
-Get the unique ID of the node as an identity in the global network.
+Get the unique ID of the peer node.
 
 ### `peer.status`
 
-Get the node status, returns `connected` or `unconnected`.
-
-### `peer.peers`
-
-Get all connected peers.
+Get the peer node status, returns `connected` or `disconnected`.
 
 ### `room = peer.joinRoom(namespace)`
 
-Join to the room, returns an object.
+Join to a room, returns an object.
 
-- `room.sendMessage()` - Function to broadcast message to room members.
+- `room.sendMessage()` - Function to broadcast message to the room.
 - `romm.onMessage((message,id)=>{})` - Listen on incoming broadcast message.
-- `room.onMembersChange((members)=>{})` - Listen on room members update.
+- `room.onMembersChange((members)=>{})` - Listen on the room members update.
 
-## Related
+## See Also
 
 - [p2p.js](https://github.com/nuzulul/p2p.js) - Alternative simple api WebRTC library with auto matchmaking without signaling server.
 

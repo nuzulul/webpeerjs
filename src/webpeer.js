@@ -113,9 +113,6 @@ class webpeerjs{
 	//callback to websocket dialable
 	#onWebsocketFn
 	
-	//time tracker for sending message
-	#sendMessageTimeTracker
-	
 	id
 	status
 	IPFS
@@ -150,7 +147,6 @@ class webpeerjs{
 		this.#lastTimeReceiveData = new Date().getTime()
 		this.#onConnectQueue = []
 		this.#msgTimeTracker = new Map()
-		this.#sendMessageTimeTracker = 0
 		
 		this.peers = (function(f) {
 			return f
@@ -160,7 +156,7 @@ class webpeerjs{
 			return libp2p.status
 		})(this.#libp2p);
 		
-		this.status = 'unconnected'
+		this.status = 'disconnected'
 
 		this.IPFS = (function(libp2p,discoveredPeers) {
 			const obj = {libp2p,discoveredPeers}
@@ -191,7 +187,13 @@ class webpeerjs{
 				}
 				this.#dialMultiaddress(mddrs)
 			}
-		})		
+		})	
+
+		const broadcast = {
+			id : this.id,
+			address : this.address
+		}			
+		signalingserver.send(broadcast);		
 
 		setInterval(()=>{
 			const broadcast = {
@@ -199,7 +201,7 @@ class webpeerjs{
 				address : this.address
 			}			
 			signalingserver.send(broadcast);
-		},10*1500)		
+		},15*1000)		
 		
 		
 		
@@ -676,6 +678,16 @@ class webpeerjs{
 			this.address = addrs
 			this.#ping()
 			this.#peerDiscoveryHybrid()
+			if(addrs.length > 0){
+				const broadcast = {
+					id : this.id,
+					address : this.address
+				}			
+				signalingserver.send(broadcast);				
+				this.status = 'connected'
+			}else{
+				this.status = 'disconnected'
+			}
 		})
 		
 		
@@ -830,17 +842,17 @@ class webpeerjs{
 
 	joinRoom = room => {
 		if (this.#rooms[room]) {
-			return [
-				this.#rooms[room].sendMessage,
-				this.#rooms[room].listenMessage,
-				this.#rooms[room].onMembersChange
-			]
+			return {
+				sendMessage : this.#rooms[room].sendMessage,
+				onMessage : this.#rooms[room].listenMessage,
+				onMembersChange : this.#rooms[room].onMembersChange
+		}
 			
 
 		}
 
 		if (!room) {
-			throw mkErr('room is required')
+			throw mkErr('Room name is required')
 		}
 		
 		//join room version 1 user pupsub via pupsub peer discovery
@@ -859,17 +871,12 @@ class webpeerjs{
 				onMessage : () => {},
 				listenMessage : f => (this.#rooms[room] = {...this.#rooms[room], onMessage: f}),
 				sendMessage : async (message) => {
-					const now = (new Date()).getTime()
-					//if(now-this.#sendMessageTimeTracker < 1000){
-						//throw mkErr('can not send more than 1 message/s')
-					//}
-					this.#sendMessageTimeTracker = now
 					const msgId = crypto.randomUUID();
 					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
 					const arr = uint8ArrayFromString(data)
 					const sizelimit = config.CONFIG_MESSAGE_SIZE_LIMIT
 					if(arr.byteLength > sizelimit){
-						throw mkErr(`Message too large more than ${sizelimit} byte`);
+						throw mkErr(`Only message less than ${sizelimit} byte allowed`);
 					}
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
@@ -975,12 +982,6 @@ class webpeerjs{
 		for(const peer of this.#connectedPeers){	
 			const item = {id:peer[0],address:peer[1].addrs}
 			this.#connectedPeersArr.push(item)
-		}
-		if(this.#connectedPeers.size > 0){
-			this.status = 'connected'
-		}
-		else{
-			this.status = 'unconnected'
 		}
 		this.#ping()
 	}
@@ -1190,44 +1191,6 @@ class webpeerjs{
 		}
 		catch(err){
 			mkDebug(err)
-		}
-	}
-	
-	async #findHybridPeer(){
-		
-		return;
-
-		if(!navigator.onLine)return
-		if(!this.#isDialEnabled)return
-		if(this.#connectedPeers.size > 5)return
-
-		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
-			if(!this.#isConnected(target) && !this.#connections.has(target)){
-				//console.log('findPeer',target)
-				const peerId = peerIdFromString(target)
-				//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
-
-				//console.info(peerInfo)
-				for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
-					//console.info('findPeer',event)
-					if (event.name === 'FINAL_PEER'){
-						//console.log(event.peer.id.toString(),event.peer.multiaddrs.toString())
-						let mddrs = []
-						let addrs = []
-						const id = event.peer.id.toString()
-						for(const mddr of event.peer.multiaddrs){
-							const peeraddr = mddr.toString()+'/p2p/'+id
-							const peermddr = multiaddr(peeraddr)
-							addrs.push(peeraddr)
-							mddrs.push(peermddr)
-						}
-						this.#dialedKnownBootstrap.set(id,addrs)
-						if(!this.#isConnected(id)){
-							this.#dialMultiaddress(mddrs)
-						}
-					}
-				}
-			}
 		}
 	}
 	
@@ -1665,6 +1628,45 @@ class webpeerjs{
 		},5000)
 	}
 	
+	async #findHybridPeer(){
+		
+		this.#dialKnownID();
+		return;
+
+		if(!navigator.onLine)return
+		if(!this.#isDialEnabled)return
+		if(this.#connectedPeers.size > 5)return
+
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_HYBRID_IDS){
+			if(!this.#isConnected(target) && !this.#connections.has(target)){
+				//console.log('findPeer',target)
+				const peerId = peerIdFromString(target)
+				//const peerInfo = await this.#libp2p.services.aminoDHT.findPeer(peerId)
+
+				//console.info(peerInfo)
+				for await (const event of this.#libp2p.services.aminoDHT.findPeer(peerId)){
+					//console.info('findPeer',event)
+					if (event.name === 'FINAL_PEER'){
+						//console.log(event.peer.id.toString(),event.peer.multiaddrs.toString())
+						let mddrs = []
+						let addrs = []
+						const id = event.peer.id.toString()
+						for(const mddr of event.peer.multiaddrs){
+							const peeraddr = mddr.toString()+'/p2p/'+id
+							const peermddr = multiaddr(peeraddr)
+							addrs.push(peeraddr)
+							mddrs.push(peermddr)
+						}
+						this.#dialedKnownBootstrap.set(id,addrs)
+						if(!this.#isConnected(id)){
+							this.#dialMultiaddress(mddrs)
+						}
+					}
+				}
+			}
+		}
+	} 	
+	
 	async #dialSavedKnownID(){
 
 		if(!navigator.onLine)return
@@ -2022,9 +2024,7 @@ const createWebPEER = async (configuration) => {
 			webSockets(),
 			webRTC(webrtcconfig),
 			circuitRelayTransport({
-				discoverRelays: config.CONFIG_DISCOVER_RELAYS,
-				reservationConcurrency: 1,
-				maxReservationQueueLength: 3
+				reservationConcurrency: config.CONFIG_DISCOVER_RELAYS
 			}),
 		],
 		connectionManager: {

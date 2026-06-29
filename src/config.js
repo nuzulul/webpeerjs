@@ -1,6 +1,6 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
 
-const prefix = 'webpeer.js'
+const prefix = 'webpeer'
 export const CONFIG_PREFIX = prefix
 export const CONFIG_PROTOCOL = '/'+prefix+'/1.0.0'
 export const CONFIG_BLOCKSTORE_PATH = prefix+'-blockstore'
