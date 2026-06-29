@@ -1,4 +1,4 @@
-# WebPEER.js
+# WebPEER
 
 WebPEER is a P2P Network that Runs in a Standard Browser.
 
