@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebPEER</title>
 	<style>
+	body{
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	}	
 	#app{
 		border:1px solid grey;
-		max-width:400px;
+		min-width:300px;
+		max-width:300px;
 		border-radius:10px;
 		height:500px;
 		position:relative;
@@ -123,7 +129,7 @@
 			</div>
 			<div id="users"></div>
 		</div>
-		<ul id="myList"><div id="spinner" style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #3498db; border-radius: 50%; animation: inline-spin 1s linear infinite;"></div></ul>
+		<ul id="myList"><div id="search"><div id="spinner" style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #3498db; border-radius: 50%; animation: inline-spin 1s linear infinite;"></div>  Searching network ...</div></ul>
 		<div id="bar">
 
 			<div id="chat">
@@ -177,14 +183,14 @@
 					users+=', ';
 				}
 				document.getElementById('users').innerText = users;
-				room.sendMessage('hello');
+				room.sendMessage('ping');
 			})
 			
 			setInterval(()=>{
 				const status = peer.status;
 				if(status == 'connected'){
 					document.getElementById("indicator").style.backgroundColor = "green";
-					document.getElementById("spinner").style.display = "none";
+					document.getElementById("search").style.display = "none";
 				}else{
 					document.getElementById("indicator").style.backgroundColor = "red";
 				}

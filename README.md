@@ -1,6 +1,6 @@
 # WebPEER
 
-WebPEER is a P2P Network that Runs in a Standard Browser.
+WebPEER is a P2P Network that Runs in a Standard Browser. It allows developers to build peer-to-peer webapps without relying on centralized servers. Aims to return internet control back to users.
 
 [>DEMO<](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
@@ -13,12 +13,14 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 
 > However, as a cooperative protocol, it may be possible for peers to interfere with the message routing algorithm in a way that disrupts the flow of messages through the network.
 
-## Features
+## Benefit
 
-* ✅ Distributed P2P
+* ✅ Distributed P2P Network
 * ✅ Scalable Peers
-* ✅ Works in Browsers
-* ✅ Broadcast Messages
+* ✅ Accessible in Standard Browser
+* ✅ Broadcast Channel Available
+* ✅ No Need Server
+* ✅ Freedom
 
 ## Ideas
 
@@ -26,13 +28,14 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * Voting / Polling
 * Collaborative activity
 * IoT
-* social media
+* Social media
 * Remote control
 * Multiplayer games
 * Distributed web
 * Signalling protocol
 * Location tracker
 * Activity tracker.
+* Chat messenger
 
 ## Try it out!
 
@@ -66,7 +69,7 @@ CDN :
 </script>
 ```
 
-## Example
+## Usage
 
 ```
 import { createWebPEER } from 'webpeerjs'
@@ -100,13 +103,13 @@ Create a new peer node.
 
 `config` - Configuration object contains:
 
-- `networkName` - Unique identifier name of your network.
+- `networkName` - Unique identifier name of the network to build.
 
-- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC transport.
+- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC connection.
 		
 ### `peer.id`
 
-Get the unique ID of the peer node.
+Get the unique ID of this peer node.
 
 ### `peer.status`
 
@@ -116,7 +119,7 @@ Get the peer node status, returns `connected` or `disconnected`.
 
 Join to a room, returns an object.
 
-- `room.sendMessage()` - Function to broadcast message to the room.
+- `room.sendMessage()` - Method to broadcast message to the room.
 - `romm.onMessage((message,id)=>{})` - Listen on incoming broadcast message.
 - `room.onMembersChange((members)=>{})` - Listen on the room members update.
 
@@ -126,5 +129,5 @@ Join to a room, returns an object.
 
 ## License
 
-[MIT (c) 2024](https://github.com/nuzulul/webpeerjs/blob/main/LICENSE) [Nuzulul Zulkarnain](https://github.com/nuzulul)
+[MIT](https://github.com/nuzulul/webpeerjs/blob/main/LICENSE) (c) 2024 [Nuzulul Zulkarnain](https://github.com/nuzulul)
 
