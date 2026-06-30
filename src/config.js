@@ -22,7 +22,6 @@ export const CONFIG_KNOWN_BOOTSTRAP_DNS = '_dnsaddr.bootstrap.libp2p.io'
 export const CONFIG_JOIN_ROOM_VERSION = 1
 export const CONFIG_TIMEOUT_DIAL_KNOWN_PEERS = 15000
 export const CONFIG_RUN_ON_TRANSIENT_CONNECTION = false
-export const CONFIG_MESSAGE_SIZE_LIMIT = 100*1024 // 100KB
 export const CONFIG_DEBUG_ENABLED = false
 export const CONFIG_AUTODIAL_MAX_ERROR_LIMIT = 45
 export const CONFIG_DIAL_MAX_ERROR_LIMIT = 55

@@ -874,10 +874,6 @@ class webpeerjs{
 					const msgId = crypto.randomUUID();
 					const data = JSON.stringify({prefix:config.CONFIG_PREFIX,room,message,id:this.#libp2p.peerId.toString(),msgId})
 					const arr = uint8ArrayFromString(data)
-					const sizelimit = config.CONFIG_MESSAGE_SIZE_LIMIT
-					if(arr.byteLength > sizelimit){
-						throw mkErr(`Only message less than ${sizelimit} byte allowed`);
-					}
 					const peer = {
 					  publicKey: this.#libp2p.peerId.publicKey,
 					  addrs: [arr],
