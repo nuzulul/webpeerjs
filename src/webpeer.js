@@ -1706,6 +1706,10 @@ class webpeerjs{
 					const peermddr = multiaddr(peeraddr)
 					addrs.push(peeraddr)
 					mddrs.push(peermddr)
+					if(addr.includes('webtransport')){
+						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
+						this.#dbstoreData.set(id,addr)
+					}					
 				}
 				
 				this.#dialedKnownBootstrap.set(id,addrs)
