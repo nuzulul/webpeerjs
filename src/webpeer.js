@@ -1720,7 +1720,10 @@ class webpeerjs{
 			if(this.#dbstoreData.has(target)){
 				firsttime = false
 			}
-			
+		}
+		
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
+		
 			if(!this.#connections.has(target) && (this.#dbstoreData.has(target) || firsttime)){
 				
 				const api = config.CONFIG_DELEGATED_API
@@ -1739,8 +1742,8 @@ class webpeerjs{
 				for(const rawaddr of address){
 					const addr = rawaddr.toString()+'/p2p/'+id.toString()
 					const mddr = multiaddr(addr)
-					addrs.push(peeraddr)
-					mddrs.push(peermddr)
+					addrs.push(addr)
+					mddrs.push(mddr)
 					if(addr.includes('/webtransport/') && addr.includes('/ip4/')){
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
