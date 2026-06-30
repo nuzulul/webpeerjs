@@ -1558,6 +1558,8 @@ class webpeerjs{
 				}
 			}
 	}
+	
+	
 	//track for good connection
 	async #connectionTracker(){
 		
@@ -1591,41 +1593,41 @@ class webpeerjs{
 	}
 	
 	
-	//dial to all known bootstrap peers and DNS
-	#dialKnownPeers(){
-		setTimeout(()=>{
-			this.#dialSavedKnownID()
-			setTimeout(()=>{this.#dialUpdateSavedKnownID()},20000)
-			setTimeout(()=>{this.#findHybridPeer()},30000)
-			setTimeout(()=>{
-				const peers = this.#libp2p.getPeers().length
-				if(peers == 0){
-					this.#dialKnownID()
-					setTimeout(()=>{this.#findHybridPeer()},30000)
-					setTimeout(()=>{
-						const peers = this.#libp2p.getPeers().length
-						if(peers == 0){
-							this.#dialKnownBootstrap()
-							setTimeout(()=>{this.#findHybridPeer()},15000)
-							setTimeout(()=>{
-								const peers = this.#libp2p.getPeers().length
-								if(peers == 0){
-									this.#dialKnownDNS()
-									setTimeout(()=>{this.#findHybridPeer()},15000)
-									setTimeout(()=>{
-										const peers = this.#libp2p.getPeers().length
-										if(peers == 0){
-											this.#dialKnownDNSonly()
-											setTimeout(()=>{this.#findHybridPeer()},15000)
-										}
-									},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
-								}
-							},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
-						}
-					},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
-				}
-			},config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS)
-		},5000)
+	//dial to all known bootstrap peers
+	
+	#dialKnownPeers(method){
+		
+		const peers = this.#libp2p.getPeers().length;
+		
+		if(!method){
+			setTimeout(()=>this.#dialKnownPeers('saved'), 5*1000);
+		}
+		
+		if(method === 'saved' && peers === 0){
+			this.#dialSavedKnownID();
+			setTimeout(()=>this.#dialUpdateSavedKnownID(),20*1000);
+			setTimeout(()=>this.#dialKnownPeers('id'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+		}
+		
+		if(method === 'id' && peers === 0){
+			this.#dialKnownID();
+			setTimeout(()=>this.#dialKnownPeers('bootstarp'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+		}
+		
+		if(method === 'bootstarp' && peers === 0){
+			this.#dialKnownBootstrap();
+			setTimeout(()=>this.#dialKnownPeers('dns'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+		}
+		
+		if(method === 'dns' && peers === 0){
+			this.#dialKnownDNS();
+			setTimeout(()=>this.#dialKnownPeers('dnsonly'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+		}
+		
+		if(method === 'dnsonly' && peers === 0){
+			this.#dialKnownDNSonly();
+		}
+		
 	}
 	
 	async #findHybridPeer(){
@@ -1714,6 +1716,8 @@ class webpeerjs{
 		}
 	}
 	
+	
+	//Update saved bootstrap address
 	async #dialUpdateSavedKnownID(){
 
 		if(!navigator.onLine)return
@@ -1724,6 +1728,9 @@ class webpeerjs{
 			if(this.#dbstoreData.has(target)){
 				firsttime = false
 			}
+		}
+		
+		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
 			if(!this.#connections.has(target) && (this.#dbstoreData.has(target) || firsttime)){
 				//console.log('#dialUpdateSavedKnownID()',target)
 				const api = config.CONFIG_DELEGATED_API
