@@ -97,9 +97,6 @@ class webpeerjs{
 	//message tracker avoid double
 	#msgIdtracker
 	
-	//inbound message time tracker
-	#msgTimeTracker
-	
 	//map of peer exchange data
 	#peerexchangedata
 	
@@ -146,7 +143,6 @@ class webpeerjs{
 		this.#lastTimeConnectToNetwork = new Date().getTime()
 		this.#lastTimeReceiveData = new Date().getTime()
 		this.#onConnectQueue = []
-		this.#msgTimeTracker = new Map()
 		
 		this.peers = (function(f) {
 			return f
@@ -448,17 +444,11 @@ class webpeerjs{
 
 									//inbound message
 									//use #msgIdtracker to prevent double message
-									//use #msgTimeTracker to limit inbound message count /s
 									if(message){
 										const msgID = msgId+id
-										let oldmsgtime = 0
 										let newmsgtime = new Date().getTime()
-										if(this.#msgTimeTracker.has(id))oldmsgtime = this.#msgTimeTracker.get(id)
-										//const msgtimelimit = 1000
-										const msgtimelimit = -1
-										if(!this.#msgIdtracker.has(msgID) && newmsgtime-oldmsgtime>msgtimelimit){
+										if(!this.#msgIdtracker.has(msgID)){
 											this.#msgIdtracker.set(msgID,newmsgtime)
-											this.#msgTimeTracker.set(id,newmsgtime)
 											this.#rooms[room].onMessage(message,id)
 										}
 									}
