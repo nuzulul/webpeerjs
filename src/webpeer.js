@@ -1687,12 +1687,12 @@ class webpeerjs{
 				const id = peer.ID
 				let mddrs = []
 				let addrs = []
-				for(const addr of address){
-					const peeraddr = addr.toString()+'/p2p/'+id.toString()
-					const peermddr = multiaddr(peeraddr)
-					addrs.push(peeraddr)
-					mddrs.push(peermddr)
-					if(addr.includes('webtransport')){
+				for(const rawaddr of address){
+					const addr = rawaddr.toString()+'/p2p/'+id.toString()
+					const mddr = multiaddr(addr)
+					addrs.push(addr)
+					mddrs.push(mddr)
+					if(addr.includes('/webtransport/') && addr.includes('/ip4/')){
 						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
 						this.#dbstoreData.set(id,addr)
 					}					
@@ -1714,15 +1714,15 @@ class webpeerjs{
 		if(!this.#isDialEnabled)return
 
 		let firsttime = true
+		
 		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
+			
 			if(this.#dbstoreData.has(target)){
 				firsttime = false
 			}
-		}
-		
-		for(const target of config.CONFIG_KNOWN_BOOTSTRAP_PEERS_IDS){
+			
 			if(!this.#connections.has(target) && (this.#dbstoreData.has(target) || firsttime)){
-				//console.log('#dialUpdateSavedKnownID()',target)
+				
 				const api = config.CONFIG_DELEGATED_API
 				const delegatedClient = delegatedRoutingV1HttpApiClient({url:api})({logger: defaultLogger()})
 				const peer = await first(delegatedClient.getPeers(peerIdFromString(target)))
@@ -1736,11 +1736,15 @@ class webpeerjs{
 				const id = peer.ID
 				let mddrs = []
 				let addrs = []
-				for(const addr of address){
-					const peeraddr = addr.toString()+'/p2p/'+id.toString()
-					const peermddr = multiaddr(peeraddr)
+				for(const rawaddr of address){
+					const addr = rawaddr.toString()+'/p2p/'+id.toString()
+					const mddr = multiaddr(addr)
 					addrs.push(peeraddr)
 					mddrs.push(peermddr)
+					if(addr.includes('/webtransport/') && addr.includes('/ip4/')){
+						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
+						this.#dbstoreData.set(id,addr)
+					}					
 				}
 				
 				this.#dialedKnownBootstrap.set(id,addrs)
