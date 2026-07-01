@@ -582,21 +582,21 @@ class webpeerjs{
 				let count = this.#trackDisconnect.get(id)
 				count++
 				this.#trackDisconnect.set(id,count)
+				
 				//console.log(this.#trackDisconnect)
 				if(count>5){
 					if(config.CONFIG_KNOWN_BOOTSTRAP_PUBLIC_IDS.includes(id)){
 						return
 					}
-				}
-				else if(count>10){
 					if(this.#dbstoreData.has(id)){
 						this.#dbstoreData.delete(id)
 					}
 					
 					if(!this.#webPeersId.includes(id) && !this.#dialedKnownBootstrap.has(id)){
 						return
-					}
+					}					
 				}
+
 			}
 			else{
 				this.#trackDisconnect.set(id,0)
@@ -668,6 +668,7 @@ class webpeerjs{
 			this.address = addrs
 			this.#ping()
 			this.#peerDiscoveryHybrid()
+			
 			if(addrs.length > 0){
 				const broadcast = {
 					id : this.id,
@@ -676,8 +677,13 @@ class webpeerjs{
 				signalingserver.send(broadcast);				
 				this.status = 'connected'
 			}else{
-				this.status = 'disconnected'
+				if(this.#connectedPeersArr.size > 0){
+					this.status = 'connected'
+				}else{
+					this.status = 'disconnected'
+				}
 			}
+			
 		})
 		
 		
@@ -754,7 +760,7 @@ class webpeerjs{
 		
 		this.#registerProtocol()
 		
-
+		//get on signal from metrics
 		onMetrics((data)=>{
 			const signal = metrics(data)
 			this.#isDialEnabled = signal.isDialEnabled
@@ -969,6 +975,16 @@ class webpeerjs{
 			const item = {id:peer[0],address:peer[1].addrs}
 			this.#connectedPeersArr.push(item)
 		}
+		if(this.#connectedPeers.size > 0){
+			this.status = 'connected';
+		}
+		else{
+			if(this.address.length > 0){
+				this.status = 'connected';
+			}else{
+				this.status = 'disconnected';
+			}
+		}		
 		this.#ping()
 	}
 
@@ -1691,11 +1707,7 @@ class webpeerjs{
 					const addr = rawaddr.toString()+'/p2p/'+id.toString()
 					const mddr = multiaddr(addr)
 					addrs.push(addr)
-					mddrs.push(mddr)
-					if(addr.includes('/webtransport/') && addr.includes('/ip4/')){
-						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
-						this.#dbstoreData.set(id,addr)
-					}					
+					mddrs.push(mddr)					
 				}
 				
 				this.#dialedKnownBootstrap.set(id,addrs)
@@ -1743,11 +1755,7 @@ class webpeerjs{
 					const addr = rawaddr.toString()+'/p2p/'+id.toString()
 					const mddr = multiaddr(addr)
 					addrs.push(addr)
-					mddrs.push(mddr)
-					if(addr.includes('/webtransport/') && addr.includes('/ip4/')){
-						await this.#dbstore.put(new Key(id), new TextEncoder().encode(addr))
-						this.#dbstoreData.set(id,addr)
-					}					
+					mddrs.push(mddr)				
 				}
 				
 				this.#dialedKnownBootstrap.set(id,addrs)
@@ -1869,7 +1877,7 @@ class webpeerjs{
 	
 	//dial based on known bootstrap DNS using DNS resolver only
 	async #dialKnownDNSonly(){
-		console.log('#dialKnownDNSonly()')
+		//console.log('#dialKnownDNSonly()')
 		if(!navigator.onLine)return
 		if(!this.#isDialEnabled)return
 
