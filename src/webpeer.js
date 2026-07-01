@@ -1630,7 +1630,7 @@ class webpeerjs{
 		
 		if(method === 'default' && peers === 0){
 			this.#dialDefaultBootstarp();
-			setTimeout(()=>this.#dialKnownPeers('webtransport'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+			setTimeout(()=>this.#dialKnownPeers('dnsonly'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
 		}		
 		
 		if(method === 'webtransport' && peers === 0){
