@@ -660,9 +660,9 @@ class webpeerjs{
 			peer.addresses.forEach((address)=>{
 				const addr = address.multiaddr.toString()+'/p2p/'+id
 				if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
-					
-					addrs.push(addr)
-									
+					if(addr.includes('/webtransport/') || addr.includes('/ws/') || addr.includes('/wss/')){
+						addrs.push(addr)
+					}				
 				}else{
 					if(addr.includes('webtransport') && addr.includes('certhash')){
 						addrs.push(addr)
