@@ -152,7 +152,7 @@ class webpeerjs{
 			return libp2p.status
 		})(this.#libp2p);
 		
-		this.status = 'disconnected'
+		this.status = 'connecting'
 
 		this.IPFS = (function(libp2p,discoveredPeers) {
 			const obj = {libp2p,discoveredPeers}
@@ -680,7 +680,7 @@ class webpeerjs{
 				if(this.#connectedPeersArr.size > 0){
 					this.status = 'connected'
 				}else{
-					this.status = 'disconnected'
+					this.status = 'connecting'
 				}
 			}
 			
@@ -982,7 +982,7 @@ class webpeerjs{
 			if(this.address.length > 0){
 				this.status = 'connected';
 			}else{
-				this.status = 'disconnected';
+				this.status = 'connecting';
 			}
 		}		
 		this.#ping()

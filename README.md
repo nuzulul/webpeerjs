@@ -113,14 +113,17 @@ Get the unique ID of this peer node.
 
 ### `peer.status`
 
-Get the peer node status, returns `connected` or `disconnected`.
+Get the peer node status, returns `connecting` or `connected`.
+
+- `connecting` - Currently not connected and is trying to connect to the network.
+- `connected` - Currently connected to the network.
 
 ### `room = peer.joinRoom(namespace)`
 
 Join to a room, returns an object.
 
 - `room.sendMessage()` - Method to broadcast message to the room.
-- `romm.onMessage((message,id)=>{})` - Listen on incoming broadcast message.
+- `romm.onMessage((message,peer_id)=>{})` - Listen on incoming broadcast message.
 - `room.onMembersChange((members)=>{})` - Listen on the room members update.
 
 ## See Also
