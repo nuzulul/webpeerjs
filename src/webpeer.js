@@ -1,5 +1,5 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
- 
+  
 import * as config from  './config.js'
 import { 
 	mkErr,
@@ -659,10 +659,10 @@ class webpeerjs{
 			const addrs = []
 			peer.addresses.forEach((address)=>{
 				const addr = address.multiaddr.toString()+'/p2p/'+id
-				if(config.CONFIG_DIAL_WEBSOCKET_ONLY){
-					//if(addr.includes('/ws/')){
-						addrs.push(addr)
-					//}					
+				if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
+					
+					addrs.push(addr)
+									
 				}else{
 					if(addr.includes('webtransport') && addr.includes('certhash')){
 						addrs.push(addr)
@@ -1619,18 +1619,18 @@ class webpeerjs{
 		const peers = this.#libp2p.getPeers().length;
 		
 		if(!method){
-			if(config.CONFIG_DIAL_WEBSOCKET_ONLY){
+			if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
 				this.#isDialWebsocket = true
 				this.#onWebsocketFn(true)				
-				setTimeout(()=>this.#dialKnownPeers('websocket'), 5*1000);
+				setTimeout(()=>this.#dialKnownPeers('default'), 5*1000);
 			}else{
 				setTimeout(()=>this.#dialKnownPeers('webtransport'), 5*1000);
 			}
 		}
 		
-		if(method === 'websocket' && peers === 0){
+		if(method === 'default' && peers === 0){
 			this.#dialDefaultBootstarp();
-			setTimeout(()=>this.#dialKnownPeers('dnsonly'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+			setTimeout(()=>this.#dialKnownPeers('webtransport'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
 		}		
 		
 		if(method === 'webtransport' && peers === 0){
@@ -2067,24 +2067,19 @@ const createWebPEER = async (configuration) => {
 	}
 	
 	
-	let configlibp2ptransport = [
-			webSockets(),
-			webRTC(webrtcconfig),
-			circuitRelayTransport({
-				reservationConcurrency: config.CONFIG_DISCOVER_RELAYS
-			}),
-		]
-	if(config.CONFIG_DIAL_WEBSOCKET_ONLY) {
-		configlibp2ptransport.push(webTransport())
-	}
-	
-	
 	//create libp2p instance
 	const libp2p = await createLibp2p({
 		addresses: {
 			listen: listenaddress,
 		},
-		transports:configlibp2ptransport,
+		transports:[
+			//webTransport(),
+			webSockets(),
+			webRTC(webrtcconfig),
+			circuitRelayTransport({
+				reservationConcurrency: config.CONFIG_DISCOVER_RELAYS
+			}),
+		],
 		connectionManager: {
 			maxConnections: config.CONFIG_MAX_CONNECTIONS,
 			minConnections: config.CONFIG_MIN_CONNECTIONS,
