@@ -1,5 +1,5 @@
 //! WebPEER.js -- https://github.com/nuzulul/webpeerjs
-
+ 
 import * as config from  './config.js'
 import { 
 	mkErr,
@@ -659,8 +659,14 @@ class webpeerjs{
 			const addrs = []
 			peer.addresses.forEach((address)=>{
 				const addr = address.multiaddr.toString()+'/p2p/'+id
-				if(addr.includes('webtransport') && addr.includes('certhash')){
-					addrs.push(addr)
+				if(config.CONFIG_DIAL_WEBSOCKET_ONLY){
+					//if(addr.includes('/ws/')){
+						addrs.push(addr)
+					//}					
+				}else{
+					if(addr.includes('webtransport') && addr.includes('certhash')){
+						addrs.push(addr)
+					}
 				}
 			})
 			if(!config.CONFIG_RUN_ON_TRANSIENT_CONNECTION)addrs.reverse()
@@ -677,7 +683,7 @@ class webpeerjs{
 				signalingserver.send(broadcast);				
 				this.status = 'connected'
 			}else{
-				if(this.#connectedPeersArr.size > 0){
+				if(this.#connectedPeers.size > 0){
 					this.status = 'connected'
 				}else{
 					this.status = 'connecting'
@@ -764,6 +770,7 @@ class webpeerjs{
 		onMetrics((data)=>{
 			const signal = metrics(data)
 			this.#isDialEnabled = signal.isDialEnabled
+			if(!this.#isDialEnabled){console.log('dial disabled')};
 			onDialFn(signal.isAutoDialEnabled)
 			
 		})
@@ -787,6 +794,14 @@ class webpeerjs{
 			this.#trackWebpeerConnection()
 			this.#garbageCollectionMsgIdTracker()
 		},10e3)
+		
+		//if no address and peers after timeout dial bootstarp with websocket
+		/*setTimeout(()=>{
+			if(this.address.length === 0 && this.#connectedPeersArr.length === 0){
+				console.log('backup');
+				this.#dialKnownDNS();
+			}
+		},90e3)*/
 		
 
 		/*setTimeout(async()=>{
@@ -975,16 +990,18 @@ class webpeerjs{
 			const item = {id:peer[0],address:peer[1].addrs}
 			this.#connectedPeersArr.push(item)
 		}
+		
+		//update status
 		if(this.#connectedPeers.size > 0){
 			this.status = 'connected';
-		}
-		else{
+		}else{
 			if(this.address.length > 0){
 				this.status = 'connected';
 			}else{
 				this.status = 'connecting';
 			}
-		}		
+		}	
+		
 		this.#ping()
 	}
 
@@ -1602,10 +1619,21 @@ class webpeerjs{
 		const peers = this.#libp2p.getPeers().length;
 		
 		if(!method){
-			setTimeout(()=>this.#dialKnownPeers('saved'), 5*1000);
+			if(config.CONFIG_DIAL_WEBSOCKET_ONLY){
+				this.#isDialWebsocket = true
+				this.#onWebsocketFn(true)				
+				setTimeout(()=>this.#dialKnownPeers('websocket'), 5*1000);
+			}else{
+				setTimeout(()=>this.#dialKnownPeers('webtransport'), 5*1000);
+			}
 		}
 		
-		if(method === 'saved' && peers === 0){
+		if(method === 'websocket' && peers === 0){
+			this.#dialDefaultBootstarp();
+			setTimeout(()=>this.#dialKnownPeers('dnsonly'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+		}		
+		
+		if(method === 'webtransport' && peers === 0){
 			this.#dialSavedKnownID();
 			setTimeout(()=>this.#dialUpdateSavedKnownID(),20*1000);
 			setTimeout(()=>this.#dialKnownPeers('id'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
@@ -1670,6 +1698,19 @@ class webpeerjs{
 			}
 		}
 	} 	
+	
+	async #dialDefaultBootstarp(){
+		for(const addr of config.CONFIG_KNOWN_DEFAULT_BOOTSTRAP_ADDRESSES){
+				const mddr = multiaddr(addr)
+				try {
+				  //console.log(`attempting to dial websocket multiaddr: %o`, mddr)
+				  await this.#libp2p.dial(mddr)
+				} catch (error) {
+				  //console.log(`failed to dial websocket multiaddr: %o`, mddr)
+				  mkDebug(error)
+				}
+		}
+	}
 	
 	async #dialSavedKnownID(){
 
@@ -2026,19 +2067,24 @@ const createWebPEER = async (configuration) => {
 	}
 	
 	
-	//create libp2p instance
-	const libp2p = await createLibp2p({
-		addresses: {
-			listen: listenaddress,
-		},
-		transports:[
-			webTransport(),
+	let configlibp2ptransport = [
 			webSockets(),
 			webRTC(webrtcconfig),
 			circuitRelayTransport({
 				reservationConcurrency: config.CONFIG_DISCOVER_RELAYS
 			}),
-		],
+		]
+	if(config.CONFIG_DIAL_WEBSOCKET_ONLY) {
+		configlibp2ptransport.push(webTransport())
+	}
+	
+	
+	//create libp2p instance
+	const libp2p = await createLibp2p({
+		addresses: {
+			listen: listenaddress,
+		},
+		transports:configlibp2ptransport,
 		connectionManager: {
 			maxConnections: config.CONFIG_MAX_CONNECTIONS,
 			minConnections: config.CONFIG_MIN_CONNECTIONS,
