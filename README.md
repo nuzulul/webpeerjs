@@ -1,6 +1,6 @@
 # WebPEER
 
-WebPEER is a Decentralized P2P Network that Runs in a Standard Browser. It allows developers to build peer-to-peer webapps without relying on centralized servers. Aims to return internet control back to users.
+WebPEER is a Decentralized P2P Network that Runs on Standard Browser. It allows developers to build peer-to-peer webapps without relying on centralized servers or specialized browsers. Aims to return internet control back to users.
 
 [>DEMO<](https://nuzulul.github.io/webpeerjs/demo/chat.html)
 
@@ -8,7 +8,7 @@ WebPEER is a Decentralized P2P Network that Runs in a Standard Browser. It allow
 
 ## Library
 
-- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - An open source JavaScript library designed as minimal, low level API provided to build decentralized P2P webapss on top WebPEER Network. Internally, it uses libp2p modular JavaScript stack as its engine.
+- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation designed as minimal, low level API provided to build decentralized P2P webapss on top WebPEER Network. Internally, it uses libp2p modular JavaScript stack as its engine.
 
 ## Security
 

@@ -1,8 +1,8 @@
 {
   "name": "webpeerjs",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
-  "description": "WebPEER is P2P Network that Runs in a Standard Browser",
+  "description": "WebPEER is P2P Network that Runs on Standard Browser",
   "main": "./src/webpeer.js",
   "module": "./src/webpeer.js",
   "exports": {
@@ -70,9 +70,9 @@
     "it-map": "^3.1.6",
     "it-pipe": "^3.0.1",
     "libp2p": "^3.3.4",
-    "multiformats": "^14.0.2",
+    "multiformats": "^14.0.3",
     "protons-runtime": "^7.0.0",
-    "signalingserver.js": "^0.0.6",
+    "signalingserver.js": "^0.0.7",
     "uint8arrays": "^6.1.1"
   }
 }
