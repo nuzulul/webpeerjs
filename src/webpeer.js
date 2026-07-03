@@ -754,7 +754,18 @@ class webpeerjs{
 					this.#updatePeers()
 				}
 				
-				if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
+				if(!this.#webPeersId.includes(id)){
+					this.#webPeersId.push(id);
+					setTimeout(()=>{
+						this.#ping()
+					},1000)
+					setTimeout(()=>{
+						this.#ping()
+					},5*1000)	
+					setTimeout(()=>{
+						this.#ping()
+					},10*1000)						
+				}
 				
 				const command = 'peer-exchange'
 				this.#dialProtocol(id,command)
@@ -803,7 +814,9 @@ class webpeerjs{
 		},5e3)
 		
 		setInterval(()=>{
-			this.#peerDiscoveryHybrid()
+			if(config.CONFIG_ENABLE_PUBSUB_PEER_DISCOVERY){
+				this.#peerDiscoveryHybrid()
+			}
 			this.#trackHybridPeersConnection()
 			this.#trackWebpeerConnection()
 			this.#garbageCollectionMsgIdTracker()
@@ -2130,6 +2143,17 @@ const createWebPEER = async (configuration) => {
 		configtransport.push(webTransport());
 	}
 	
+	let configpeerdiscovery = [];
+	if(config.CONFIG_ENABLE_PUBSUB_PEER_DISCOVERY){
+		configpeerdiscovery.push(
+			pubsubPeerDiscovery({
+				interval: 5_000,
+				topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
+				listenOnly: false,
+			}),
+		)
+	}
+	
 	
 	//create libp2p instance
 	const libp2p = await createLibp2p({
@@ -2184,14 +2208,7 @@ const createWebPEER = async (configuration) => {
 				return !isDial
 			},
 		},
-		peerDiscovery: [
-			pubsubPeerDiscovery({
-				interval: 5_000,
-				topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
-				listenOnly: false,
-			}),
-			
-		],
+		peerDiscovery: configpeerdiscovery,
 		services: {
 			pubsub: gossipsub({
 				allowPublishToZeroTopicPeers: true,
