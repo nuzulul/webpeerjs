@@ -746,7 +746,15 @@ class webpeerjs{
 					const now = new Date().getTime()
 					const metadata = {addrs:address,last:now}
 					this.#connectedPeers.set(id,metadata);
+				}else{
+					const now = new Date().getTime()
+					const metadata = {addrs:address,last:now}
+					this.#connectedPeers.set(id,metadata);
+					this.#onConnectFnUpdate(id)
+					this.#updatePeers()
 				}
+				
+				if(!this.#webPeersId.includes(id))this.#webPeersId.push(id)
 				
 				const command = 'peer-exchange'
 				this.#dialProtocol(id,command)
