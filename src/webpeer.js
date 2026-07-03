@@ -1252,7 +1252,7 @@ class webpeerjs{
 			const id = peer[0]
 			const last = peer[1].last
 			const time = now-last
-			if((time>timeout && !this.#isConnected(id))||(time>forcetimeout)){
+			if((time>timeout && !this.#isConnected(id))||(time>forcetimeout && !this.#isConnected(id))){
 				
 				//remove peer id from peers
 				this.#connectedPeers.delete(id)
