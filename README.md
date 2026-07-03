@@ -128,7 +128,7 @@ Join to a room, returns an object.
 
 - `room.sendMessage()` - Method to broadcast message to the room.
 - `romm.onMessage((message,peer_id)=>{})` - Listen on incoming broadcast message.
-- `room.onMembersChange((members)=>{})` - Listen on the room members update.
+- `room.onMembersChange((members)=>{})` - Listen on the room members update when a new peer is discovered or a peer is unreachable.
 
 ## See Also
 
