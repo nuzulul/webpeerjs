@@ -659,14 +659,20 @@ class webpeerjs{
 			const addrs = []
 			peer.addresses.forEach((address)=>{
 				const addr = address.multiaddr.toString()+'/p2p/'+id
-				if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
-					if(addr.includes('/webtransport/') || addr.includes('/ws/') || addr.includes('/wss/')){
-						addrs.push(addr)
-					}				
-				}else{
-					if(addr.includes('webtransport') && addr.includes('certhash')){
-						addrs.push(addr)
+				if(config.CONFIG_DIAL_INCULDE_WEBTRANSPORT){
+					if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
+						if(addr.includes('/webtransport/') || addr.includes('/ws/') || addr.includes('/wss/')){
+							addrs.push(addr)
+						}				
+					}else{
+						if(addr.includes('webtransport') && addr.includes('certhash')){
+							addrs.push(addr)
+						}
 					}
+				}else{
+						if(addr.includes('/ws/') || addr.includes('/wss/')){
+							addrs.push(addr)
+						}					
 				}
 			})
 			if(!config.CONFIG_RUN_ON_TRANSIENT_CONNECTION)addrs.reverse()
@@ -1635,11 +1641,17 @@ class webpeerjs{
 			if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
 				this.#isDialWebsocket = true
 				this.#onWebsocketFn(true)				
-				setTimeout(()=>this.#dialKnownPeers('default'), 5*1000);
+				//setTimeout(()=>this.#dialKnownPeers('default'), 5*1000);
+				setTimeout(()=>this.#dialKnownPeers('websocket'), 10);
 			}else{
 				setTimeout(()=>this.#dialKnownPeers('webtransport'), 5*1000);
 			}
 		}
+		
+		if(method === 'websocket' && peers === 0){
+			this.#dialWssBootstarp();
+			setTimeout(()=>this.#dialKnownPeers('default'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+		}		
 		
 		if(method === 'default' && peers === 0){
 			this.#dialDefaultBootstarp();
@@ -1654,10 +1666,10 @@ class webpeerjs{
 		
 		if(method === 'id' && peers === 0){
 			this.#dialKnownID();
-			setTimeout(()=>this.#dialKnownPeers('bootstarp'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
+			setTimeout(()=>this.#dialKnownPeers('bootstrap'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
 		}
 		
-		if(method === 'bootstarp' && peers === 0){
+		if(method === 'bootstrap' && peers === 0){
 			this.#dialKnownBootstrap();
 			setTimeout(()=>this.#dialKnownPeers('dns'), config.CONFIG_TIMEOUT_DIAL_KNOWN_PEERS);
 		}
@@ -1712,6 +1724,25 @@ class webpeerjs{
 		}
 	} 	
 	
+	async #dialWssBootstarp(){
+		const addrs = [
+			'/dns/sv15.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+			'/dns/ny5.bootstrap.libp2p.io/tcp/443/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+			'/dns/am6.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+			'/dns/sg1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'	
+		]
+		for(const addr of addrs){
+				const mddr = multiaddr(addr)
+				try {
+				  //console.log(`attempting to dial websocket multiaddr: %o`, mddr)
+				  await this.#libp2p.dial(mddr)
+				} catch (error) {
+				  //console.log(`failed to dial websocket multiaddr: %o`, mddr)
+				  mkDebug(error)
+				}
+		}
+	}
+	
 	async #dialDefaultBootstarp(){
 		for(const addr of config.CONFIG_KNOWN_DEFAULT_BOOTSTRAP_ADDRESSES){
 				const mddr = multiaddr(addr)
@@ -1723,7 +1754,7 @@ class webpeerjs{
 				  mkDebug(error)
 				}
 		}
-	}
+	}	
 	
 	async #dialSavedKnownID(){
 
@@ -2079,20 +2110,25 @@ const createWebPEER = async (configuration) => {
 		webrtcconfig[rtcConfiguration] = configuration.rtcConfiguration
 	}
 	
-	
-	//create libp2p instance
-	const libp2p = await createLibp2p({
-		addresses: {
-			listen: listenaddress,
-		},
-		transports:[
+	let configtransport = [
 			//webTransport(),
 			webSockets(),
 			webRTC(webrtcconfig),
 			circuitRelayTransport({
 				reservationConcurrency: config.CONFIG_DISCOVER_RELAYS
 			}),
-		],
+	]
+	if(config.CONFIG_DIAL_INCULDE_WEBTRANSPORT){
+		configtransport.push(webTransport());
+	}
+	
+	
+	//create libp2p instance
+	const libp2p = await createLibp2p({
+		addresses: {
+			listen: listenaddress,
+		},
+		transports: configtransport,
 		connectionManager: {
 			maxConnections: config.CONFIG_MAX_CONNECTIONS,
 			minConnections: config.CONFIG_MIN_CONNECTIONS,
