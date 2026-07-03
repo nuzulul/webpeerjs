@@ -133,7 +133,7 @@ const logCountEl = document.getElementById('logCount')
 		  connectedWebPeersListEl.innerHTML = ''
 		  for (const peer of peers) {
 			const peerEl = document.createElement('li')
-			peerEl.innerText = peer.id
+			peerEl.innerText = peer
 			connectedWebPeersListEl.appendChild(peerEl)
 		  }
 	}

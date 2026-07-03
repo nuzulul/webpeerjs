@@ -987,8 +987,8 @@ class webpeerjs{
 	#updatePeers(){
 		this.#connectedPeersArr.length = 0
 		for(const peer of this.#connectedPeers){	
-			const item = {id:peer[0],address:peer[1].addrs}
-			this.#connectedPeersArr.push(item)
+			const id = peer[0]
+			this.#connectedPeersArr.push(id)
 		}
 		
 		//update status
@@ -1214,11 +1214,32 @@ class webpeerjs{
 	}
 	
 	
-	//check the last seen in web peer
+	//check the last seen in webpeer network
 	#trackLastSeen(){
+		
 		const timeout = 20*1000
 		const forcetimeout = 60*1000
-		const now = new Date().getTime()
+		const now = new Date().getTime();
+		
+		
+		//trackm room member
+		const peers = this.#connectedPeersArr;
+		const rooms = Object.entries(this.#rooms)
+		for(const room of rooms){
+			const roomname = room[0];
+			const roommembers = room[1].members;
+			for(const member of roommembers){
+				if(member === this.id){
+					continue;
+				}
+				if(!peers.includes(member)){
+						const index = this.#rooms[roomname].members.indexOf(member)
+						this.#rooms[roomname].members.splice(index,1)
+						this.#rooms[roomname].onMembers(this.#rooms[roomname].members)					
+				}
+			}
+		}
+		
 		
 		//if webpeer last seen grather then timeout send onDisconnect
 		for(const peer of this.#connectedPeers){
@@ -1226,26 +1247,18 @@ class webpeerjs{
 			const last = peer[1].last
 			const time = now-last
 			if((time>timeout && !this.#isConnected(id))||(time>forcetimeout)){
-				//console.log('time',time)
+				
+				//remove peer id from peers
 				this.#connectedPeers.delete(id)
 				this.#updatePeers()
 				this.#onDisconnectFn(id)
 				
-				//remove id from room member
-				const rooms = Object.keys(this.#rooms)
-				for(const room of rooms){
-					if(this.#rooms[room].members.includes(id)){
-						const index = this.#rooms[room].members.indexOf(id)
-						this.#rooms[room].members.splice(index,1)
-						this.#rooms[room].onMembers(this.#rooms[room].members)
-					}
-				}
-				
 			}
 		}
+	
 	}
 	
-	//check if this id is connected
+	//check if peer is connected
 	#isConnected(id){
 			let peers = []
 			for(const peer of this.#libp2p.getPeers()){
