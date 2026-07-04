@@ -79,7 +79,7 @@ CDN :
 import { createWebPEER } from 'webpeerjs'
 
 const config = {
-	networkName : 'myNetwork'
+	appName : 'myAppHelloWorld'
 }
 
 const peer = await createWebPEER();
@@ -107,7 +107,7 @@ Create a new peer node.
 
 `config` - Configuration object contains:
 
-- `networkName` - Unique identifier name of the network to build.
+- `appName` - Unique application name.
 
 - `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC connection.
 		
@@ -128,7 +128,7 @@ Join to a room, returns an object.
 
 - `room.sendMessage()` - Method to broadcast message to the room.
 - `romm.onMessage((message,peer_id)=>{})` - Listen on incoming broadcast message.
-- `room.onMembersChange((members)=>{})` - Listen on the room members update when a new peer is discovered or a peer is unreachable.
+- `room.onMembers((members)=>{})` - Listen on the room members update when a peer is join or leave.
 
 ## See Also
 

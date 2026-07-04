@@ -438,7 +438,7 @@ class webpeerjs{
 									if(!this.#rooms[room].members.includes(id)){
 										if(this.#connectedPeers.has(id)){
 											this.#rooms[room].members.push(id)
-											this.#rooms[room].onMembers(this.#rooms[room].members)
+											this.#rooms[room].onMembersUpdate(this.#rooms[room].members)
 										}
 									}
 
@@ -465,7 +465,7 @@ class webpeerjs{
 										if(!this.#rooms[room].members.includes(id)){
 											if(this.#connectedPeers.has(id)){
 												this.#rooms[room].members.push(id)
-												this.#rooms[room].onMembers(this.#rooms[room].members)
+												this.#rooms[room].onMembersUpdate(this.#rooms[room].members)
 											}
 										}
 										
@@ -883,7 +883,7 @@ class webpeerjs{
 			return {
 				sendMessage : this.#rooms[room].sendMessage,
 				onMessage : this.#rooms[room].listenMessage,
-				onMembersChange : this.#rooms[room].onMembersChange
+				onMembers : this.#rooms[room].onMembers
 		}
 			
 
@@ -922,15 +922,15 @@ class webpeerjs{
 					}
 				},
 				members : [this.id],
-				onMembers : () => {},
-				onMembersChange : f => {this.#rooms[room] = {...this.#rooms[room], onMembers: f};this.#rooms[room].onMembers(this.#rooms[room].members);this.#ping()},
+				onMembersUpdate : () => {},
+				onMembers : f => {this.#rooms[room] = {...this.#rooms[room], onMembersUpdate: f};this.#rooms[room].onMembersUpdate(this.#rooms[room].members);this.#ping()},
 			}
 		}
 		
 		return {
 			sendMessage : this.#rooms[room].sendMessage,
 			onMessage : this.#rooms[room].listenMessage,
-			onMembersChange : this.#rooms[room].onMembersChange
+			onMembers : this.#rooms[room].onMembers
 		}
 	}
 	
@@ -1262,7 +1262,7 @@ class webpeerjs{
 				if(!peers.includes(member)){
 						const index = this.#rooms[roomname].members.indexOf(member)
 						this.#rooms[roomname].members.splice(index,1)
-						this.#rooms[roomname].onMembers(this.#rooms[roomname].members)					
+						this.#rooms[roomname].onMembersUpdate(this.#rooms[roomname].members)					
 				}
 			}
 		}
@@ -2075,8 +2075,8 @@ const createWebPEER = async (configuration) => {
 	}
 	
 	let signalconfig = {};
-	if(configuration && configuration.networkName){
-		signalconfig['appid'] = configuration.networkName;
+	if(configuration && configuration.appName){
+		signalconfig['appid'] = configuration.appName;
 	}else{
 		signalconfig['appid'] = config.CONFIG_PREFIX;
 	}
