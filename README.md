@@ -8,7 +8,7 @@ WebPEER is a Decentralized P2P Network in the Browser. It allows developers to b
 
 ## Library
 
-- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation designed as minimal, low level API provided to build decentralized P2P webapss on top WebPEER Network. Internally, it uses libp2p modular JavaScript stack as its engine.
+- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation of WebPEER designed as minimal low level API. It uses IPFS and libp2p modular stack for the specific purpose of propagating messages across the network. Consequently these messages may arrive asyncrhonously depending on the how many iterations the message goes through.
 
 ## Security
 
@@ -23,7 +23,9 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * ✅ Scalable Peers
 * ✅ Accessible in Standard Browser
 * ✅ Broadcast Channel Provided
-* ✅ No Server Required
+* ✅ No Server
+* ✅ No Cloud
+* ✅ No Admin
 * ✅ Freedom
 
 ## Ideas
@@ -92,7 +94,7 @@ room.onMessage((message,id) => {
 	console.log(`Message from ${id} : ${message}`)
 })
 
-room.onMembersChange((data) => {
+room.onMembers((data) => {
 	console.log(`Members : ${data}`)
 	room.sendMessage('hello')
 })
@@ -126,9 +128,9 @@ Get the peer node status, returns `connecting` or `connected`.
 
 Join to a room, returns an object.
 
-- `room.sendMessage()` - Method to broadcast message to the room.
+- `room.sendMessage()` - Method to broadcast message.
 - `romm.onMessage((message,peer_id)=>{})` - Listen on incoming broadcast message.
-- `room.onMembers((members)=>{})` - Listen on the room members update when a peer is join or leave.
+- `room.onMembers((members)=>{})` - Listen on members update when a peer is join or leave.
 
 ## See Also
 
