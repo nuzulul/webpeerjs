@@ -110,8 +110,6 @@ Create a new peer node.
 `config` - Configuration object contains:
 
 - `appName` - Unique application name.
-
-- `rtcConfiguration` - **(optional)** Custom [rtcConfiguration](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection) for WebRTC connection.
 		
 ### `peer.id`
 
@@ -128,9 +126,9 @@ Get the peer node status, returns `connecting` or `connected`.
 
 Join to a room, returns an object.
 
-- `room.sendMessage()` - Method to broadcast message.
+- `room.sendMessage(message)` - Method to broadcast message.
 - `romm.onMessage((message,peer_id)=>{})` - Listen on incoming broadcast message.
-- `room.onMembers((members)=>{})` - Listen on members update when a peer is join or leave.
+- `room.onMembers((members)=>{})` - Listen on members update when peer appears and disappears.
 
 ## See Also
 
