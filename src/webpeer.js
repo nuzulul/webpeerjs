@@ -2214,7 +2214,7 @@ const createWebPEER = async (configuration) => {
 				allowPublishToZeroTopicPeers: true,
 				msgIdFn: msgIdFnStrictNoSign,
 				ignoreDuplicatePublishError: true,
-				runOnLimitedConnection:config.CONFIG_RUN_ON_TRANSIENT_CONNECTION,
+				runOnLimitedConnection:true,
 			}),
 			identify: identify(),
 			ping: ping(),

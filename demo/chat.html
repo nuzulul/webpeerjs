@@ -179,7 +179,7 @@
 				write(`${user} : ${message}`);
 			})
 			
-			room.onMembersChange((data) => {
+			room.onMembers((data) => {
 				document.getElementById('number').innerText = data.length;
 				let users = '';
 				for(const user of data){

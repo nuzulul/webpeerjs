@@ -1,6 +1,6 @@
 {
   "name": "webpeerjs",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "type": "module",
   "description": "WebPEER is P2P Network that Runs on Standard Browser",
   "main": "./src/webpeer.js",

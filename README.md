@@ -8,7 +8,7 @@ WebPEER is a Decentralized P2P Network in the Browser. It allows developers to b
 
 ## Library
 
-- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation of WebPEER designed as minimal low level API. It uses IPFS and libp2p modular stack for the specific purpose of propagating messages across the network. Consequently these messages may arrive asyncrhonously depending on the how many iterations the message goes through.
+- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation of WebPEER designed as minimal low level API. It uses IPFS and libp2p modular stack for the specific purpose of propagating messages across the network through direct WebRTC connections between browsers. Consequently these messages may arrive asyncrhonously depending on the how many iterations the message goes through.
 
 ## Security
 
@@ -19,10 +19,11 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 
 ## Benefit
 
-* ✅ Decentralized P2P Network
-* ✅ Scalable Peers
-* ✅ Accessible in Standard Browser
-* ✅ Broadcast Channel Provided
+* ✅ Decentralized
+* ✅ True P2P
+* ✅ Scalable
+* ✅ Standard Browser
+* ✅ Broadcast Channel
 * ✅ No Server
 * ✅ No Cloud
 * ✅ No Admin
@@ -36,9 +37,9 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * IoT
 * Social media
 * Remote control
-* Multiplayer games
+* Multiplayer
 * Distributed web
-* Signalling protocol
+* Signalling
 * Location tracker
 * Activity tracker.
 * Chat messenger
