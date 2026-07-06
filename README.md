@@ -6,13 +6,13 @@ WebPEER is a Decentralized P2P Network in the Browser. It allows developers to b
 
 ![WebPEER](webpeer.png)
 
-## Library
+## Implementation
 
-- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation of WebPEER designed as minimal low level API. It uses IPFS and libp2p modular stack for the specific purpose of propagating messages across the network through direct WebRTC connections between browsers. Consequently these messages may arrive asyncrhonously depending on the how many iterations the message goes through.
+- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation of WebPEER Network designed as a minimal, essential API. It uses IPFS and the libp2p modular stack for the specific purpose of propagating messages over the network via direct WebRTC connections between browsers. As a result, these messages can arrive asynchronously depending on how many iterations they have gone through.
 
 ## Security
 
-WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/security-considerations/#publish--subscribe) protocol to enables communication between peers. 
+WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/security/security-considerations/#publish--subscribe) protocol to enables secure communication between peers. 
 > By default, the gossipsub implementation will sign all messages with the author’s private key, and require a valid signature before accepting or propagating a message further. This prevents messages from being altered in flight, and allows recipients to authenticate the sender.
 
 > However, as a cooperative protocol, it may be possible for peers to interfere with the message routing algorithm in a way that disrupts the flow of messages through the network.
@@ -22,7 +22,7 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * ✅ Decentralized
 * ✅ True P2P
 * ✅ Scalable
-* ✅ Standard Browser
+* ✅ Use Standard Browser
 * ✅ Broadcast Channel
 * ✅ No Server
 * ✅ No Cloud
