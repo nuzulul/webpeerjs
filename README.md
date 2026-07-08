@@ -8,7 +8,13 @@ WebPEER is a Decentralized P2P Network in the Browser. It allows developers to b
 
 ## Implementation
 
-- [WebPEER.js](https://www.npmjs.com/package/webpeerjs) - JavaScript implementation of WebPEER Network designed as a minimal, essential API. It uses IPFS and the libp2p modular stack for the specific purpose of propagating messages over the network via direct WebRTC connections between browsers. As a result, these messages can arrive asynchronously depending on how many iterations they have gone through.
+- [WebPEER.js](https://www.npmjs.com/package/webpeerjs)
+
+JavaScript implementation of WebPEER Network designed as a minimal, essential API. It uses IPFS and the libp2p modular stack for the specific purpose of propagating messages over the network via direct WebRTC connections between browsers. As a result, these messages can arrive asynchronously depending on how many iterations they have gone through.
+
+## Bootstrapping
+
+When a new peer is created, it doesn't know the addresses of existing peers on the network. While manually entering peer addresses is possible, it's impractical. Another strategy is to use federated media, leveraging public protocols like [Torrent](https://github.com/nuzulul/signalingserver.js) to facilitate address exchange. Once the peer addresses are obtained, the peer can establish a direct browser-to-browser connection to the WebPEER Network.
 
 ## Security
 
