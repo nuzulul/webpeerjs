@@ -33,7 +33,7 @@
 		"libp2p": "https://esm.sh/libp2p@3.3.4",
 		"multiformats/hashes/sha2": "https://esm.sh/multiformats/hashes/sha2",
 		"protons-runtime": "https://esm.sh/protons-runtime@7.0.0",
-		"signalingserver.js": "https://esm.sh/signalingserver.js@0.0.6",
+		"signalingserver.js": "https://esm.sh/signalingserver.js@0.0.7",
 		"uint8arrays/alloc": "https://esm.sh/uint8arrays/alloc",
 		"webpeerjs": "./../src/webpeer.js"
     }
@@ -179,7 +179,7 @@ const logCountEl = document.getElementById('logCount')
 	let number = 0
 	
 	setInterval(()=>{
-		room.sendMessage(number)
+		room.sendMessage(number) 
 		number++
 	},2000)
 	

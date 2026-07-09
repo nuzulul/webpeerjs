@@ -174,15 +174,17 @@ class webpeerjs{
 		 * Signaling server
 		 **************************************************************************/
 		signalingserver.data((signal,signal_id)=>{
-			if(!this.#connections.has(signal.id)){
-				let mddrs = []
-				for(const addr of signal.address){
-					if(!addr.includes('webrtc'))continue
-					const mddr = multiaddr(addr)
-					mddrs.push(mddr)
+			setTimeout(()=>{
+				if(!this.#connections.has(signal.id)){
+					let mddrs = []
+					for(const addr of signal.address){
+						if(addr.includes('webrtc'))continue
+						const mddr = multiaddr(addr)
+						mddrs.push(mddr)
+					}
+					this.#dialMultiaddress(mddrs)
 				}
-				this.#dialMultiaddress(mddrs)
-			}
+			},Math.floor(Math.random() * 5000));
 		})	
 
 		const broadcast = {
@@ -768,7 +770,7 @@ class webpeerjs{
 				}
 				
 				const command = 'peer-exchange'
-				this.#dialProtocol(id,command)
+				//this.#dialProtocol(id,command)
 				
 
 			}
@@ -1041,7 +1043,7 @@ class webpeerjs{
 		
 		const handler = async ({ connection, stream }) => {
 			
-			//console.log('onprotocol',connection);
+			console.log('onprotocol',connection);
 			
 			try{
 				const output = await pipe(
@@ -1198,7 +1200,8 @@ class webpeerjs{
 				  return string
 				}
 			)
-			//console.log(output)
+			//console.log('output',output)
+			
 			const json = JSON.parse(output)
 			if(json.protocol == config.CONFIG_PROTOCOL){
 				const address = [addr]
@@ -1659,13 +1662,15 @@ class webpeerjs{
 		const peers = this.#libp2p.getPeers().length;
 		
 		if(!method){
-			if(config.CONFIG_DIAL_WEBSOCKET_FIRST){
+			if(config.CONFIG_DIAL_WEBSOCKET_FIRST && peers === 0){
 				this.#isDialWebsocket = true
 				this.#onWebsocketFn(true)				
 				//setTimeout(()=>this.#dialKnownPeers('default'), 5*1000);
 				setTimeout(()=>this.#dialKnownPeers('websocket'), 10);
 			}else{
-				setTimeout(()=>this.#dialKnownPeers('webtransport'), 5*1000);
+				if(peers === 0){
+					setTimeout(()=>this.#dialKnownPeers('webtransport'), 5*1000);
+				}
 			}
 		}
 		
@@ -2147,7 +2152,7 @@ const createWebPEER = async (configuration) => {
 	if(config.CONFIG_ENABLE_PUBSUB_PEER_DISCOVERY){
 		configpeerdiscovery.push(
 			pubsubPeerDiscovery({
-				interval: 5_000,
+				interval: 15_000,
 				topics: config.CONFIG_PUBSUB_PEER_DISCOVERY_WEBPEER,
 				listenOnly: false,
 			}),
