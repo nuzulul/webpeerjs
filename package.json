@@ -1,8 +1,8 @@
 {
   "name": "webpeerjs",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "type": "module",
-  "description": "WebPEER is P2P Network that Runs on Standard Browser",
+  "description": "WebPEER is a Decentralized P2P Network in the Browser",
   "main": "./src/webpeer.js",
   "module": "./src/webpeer.js",
   "exports": {
