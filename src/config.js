@@ -27,7 +27,7 @@ export const CONFIG_AUTODIAL_MAX_ERROR_LIMIT = 45
 export const CONFIG_DIAL_MAX_ERROR_LIMIT = 55
 export const CONFIG_DIAL_WEBSOCKET_FIRST = true;
 export const CONFIG_DIAL_INCULDE_WEBTRANSPORT = true;
-export const CONFIG_ENABLE_PUBSUB_PEER_DISCOVERY = true;
+export const CONFIG_ENABLE_PUBSUB_PEER_DISCOVERY = false;
 
 // this list comes from https://github.com/ipfs/kubo/blob/196887cbe5fbcd41243c1dfb0db681a1cc2914ff/config/bootstrap_peers.go
 export const CONFIG_KNOWN_DEFAULT_BOOTSTRAP_ADDRESSES = [

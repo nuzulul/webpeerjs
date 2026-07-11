@@ -6,11 +6,15 @@ WebPEER is a Decentralized P2P Network in the Browser. It allows developers to b
 
 ![WebPEER](webpeer.png)
 
+## Spirit
+
+In the early days of the World Wide Web, the internet was more open and more like a peer-to-peer network, where every user had equal standing on the network. This project aims to restore that early spirit through web standards, so that no single entity controls the network. However, the reality that standard web browsers have many limitations makes this dream a significant challenge. WebPEER seeks to address these challenges to see what is possible on today's web by reusing already invented components.
+
 ## Implementation
 
 - [WebPEER.js](https://www.npmjs.com/package/webpeerjs)
 
-JavaScript implementation of WebPEER Network designed as a minimal, essential API. It uses IPFS and the libp2p modular stack for the specific purpose of propagating messages over the network via direct WebRTC connections between browsers. As a result, these messages can arrive asynchronously depending on how many iterations they have gone through.
+The JavaScript implementation of WebPEER Network designed as a minimal, essential API. It uses IPFS and the libp2p modular stack for the specific purpose of propagating messages over the network via direct WebRTC connections between browsers. The consequence is that these messages can arrive asynchronously depending on how many iterations they have gone through.
 
 ## Bootstrapping
 
@@ -28,11 +32,15 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * ✅ Decentralized
 * ✅ True P2P
 * ✅ Scalable
-* ✅ Use Standard Browser
+* ✅ Standard Web
+* ✅ Standard Browser
 * ✅ Broadcast Channel
 * ✅ No Server
 * ✅ No Cloud
 * ✅ No Admin
+* ✅ No Account
+* ✅ No Database
+* ✅ No Install
 * ✅ Freedom
 
 ## Ideas
@@ -62,7 +70,7 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 
 ## Quickstart
 
-NPM install:
+NPM:
 
 ```
 npm install webpeerjs
@@ -112,7 +120,7 @@ room.onMembers((data) => {
 
 ### `peer = await createWebPEER(config)`
 
-Create a new peer node.
+Create a new peer.
 
 `config` - Configuration object contains:
 
@@ -120,11 +128,11 @@ Create a new peer node.
 		
 ### `peer.id`
 
-Get the unique ID of this peer node.
+Get the unique ID of this peer.
 
 ### `peer.status`
 
-Get the peer node status, returns `connecting` or `connected`.
+Get the peer status, returns `connecting` or `connected`.
 
 - `connecting` - Currently not connected and is trying to connect to the network.
 - `connected` - Currently connected to the network.
