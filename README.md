@@ -8,7 +8,7 @@ WebPEER is a Decentralized P2P Network in the Browser. It allows developers to b
 
 ## Spirit
 
-In the early days of the World Wide Web, the internet was more open and more like a peer-to-peer network, where every user had equal standing on the network. This project aims to restore that early spirit through web standards, so that no single entity controls the network. However, the reality that standard web browsers have many limitations makes this dream a significant challenge. WebPEER seeks to address these challenges to see what is possible on today's web by reusing already invented components.
+In the early days of the World Wide Web, the internet was more open and more like a peer-to-peer network, where every user had equal standing on the network. This project aims to restore that early spirit through web standards, so that no single entity controls the network. However, the reality that standard web browsers have many limitations makes this dream a significant challenge. WebPEER seeks to address these challenges to see what is possible on today's web by reusing already invented components. Focus on being able to send messages across the network.
 
 ## Implementation
 
@@ -18,7 +18,11 @@ The JavaScript implementation of WebPEER Network designed as a minimal, essentia
 
 ## Bootstrapping
 
-When a new peer is created, it doesn't know the addresses of existing peers on the network. While manually entering peer addresses is possible, it's impractical. Another strategy is to use federated media, leveraging public protocols like [Torrent](https://github.com/nuzulul/signalingserver.js) to facilitate address exchange. Once the peer addresses are obtained, the peer can establish a direct browser-to-browser connection to the WebPEER Network.
+When a new peer is created, it doesn't know the addresses of existing peers on the network. While manually entering peer addresses is possible, it's impractical. WebPEER strategy is to use federated media, leveraging public protocols like [Torrent](https://github.com/nuzulul/signalingserver.js) to facilitate address exchange. Once the peer addresses are obtained, the peer can establish a direct browser-to-browser connection to the WebPEER Network.
+
+## Unstructured
+
+Browser-based peer-to-peer networks are known to have high churn rates, with peers frequently joining or leaving the network. Therefore, the WebPEER Network uses a simple, unstructured network. This simplicity offers the advantage of allowing the network to scale well.
 
 ## Security
 
@@ -41,6 +45,7 @@ WebPEER Network run over [`libp2p gossipsub`](https://docs.libp2p.io/concepts/se
 * ✅ No Account
 * ✅ No Database
 * ✅ No Install
+* ✅ No Limit
 * ✅ Freedom
 
 ## Ideas
